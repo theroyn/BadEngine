@@ -9,6 +9,7 @@ using namespace std;
 class Shader
 {
 public:
+  Shader() {}
   Shader(const char *vertex_path, const char     *fragment_path);
   void load_program(GLint      &result, std::vector<GLchar> &msg,
                       const char *vertex_path, const char     *fragment_path);

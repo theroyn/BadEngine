@@ -259,3 +259,16 @@ paket-files/
 # Python Tools for Visual Studio (PTVS)
 __pycache__/
 *.pyc
+/CFD/glfw3.dll
+/CFD/glewinfo.exe
+/CFD/glew32.dll
+/CFD/freeglut.dll
+/CFD/CFD.vcxproj.filters
+/CFD/CFD.vcxproj
+/CFD/CFD.ipdb
+/CFD/CFD.iobj
+/CFD/CFD.exe
+/CFD/BadEngine.lib
+/CFD/base_vs.glsl
+/CFD/base_fs.glsl
+/CFD/visualinfo.exe

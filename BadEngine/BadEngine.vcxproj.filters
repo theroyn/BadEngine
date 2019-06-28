@@ -16,6 +16,9 @@
     <Filter Include="shaders">
       <UniqueIdentifier>{8d6e4b36-4a0f-45f9-96f6-0f0d5f25cacb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="demos">
+      <UniqueIdentifier>{149e7be0-f8c5-4ee7-919b-8deaf7f02c84}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BadEngine.cpp">
@@ -28,6 +31,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Shader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="quadrics.cpp">
+      <Filter>demos</Filter>
+    </ClCompile>
+    <ClCompile Include="OBJParser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -60,6 +69,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="const.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Sphere.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OBJParser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

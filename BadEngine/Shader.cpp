@@ -28,7 +28,7 @@ void Shader::load_program(GLint &result, vector<GLchar>  &msg,
 
 
   if (result == GL_TRUE)
-    GLuint frag_shader_ = load_shader(fragment_path, GL_FRAGMENT_SHADER, result, msg);
+    frag_shader_ = load_shader(fragment_path, GL_FRAGMENT_SHADER, result, msg);
   if (result == GL_TRUE)
     program_ = load_program(vert_shader_, frag_shader_, result, msg);
 

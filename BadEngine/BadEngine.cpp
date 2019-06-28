@@ -8,6 +8,7 @@
 #include "BadEngine.h"
 #include "coords.h"
 #include "Shader.h"
+#include "Sphere.h"
 
 const GLuint SCR_WIDTH = 800;
 const GLuint SCR_HEIGHT = 600;
@@ -24,7 +25,7 @@ namespace gl_cbs
 void framebuffer_size_cb(GLFWwindow* window, int width, int height);
 
 
-#define APPLICATION_MODE
+//#define APPLICATION_MODE
 #ifdef APPLICATION_MODE
 int main()
 {
@@ -57,7 +58,11 @@ void framebuffer_size_cb(GLFWwindow* window, int width, int height)
   glViewport(0, 0, width, height);
 }
 
-BadEngine::BadEngine() : status_(R_SUCCESS), msg_(""), cam_(nullptr)
+BadEngine::BadEngine() : status_(R_SUCCESS),
+                         msg_(""),
+                         cam_(nullptr),
+                         sphere_vbos_ { 0 },
+                         sphere_vao_  { 0 }
 {
 }
 
@@ -70,6 +75,8 @@ BadEngine::~BadEngine()
     cam_ = nullptr;
     gl_cbs::p_camera = nullptr;
   }
+
+  spheres_.erase(spheres_.begin(), spheres_.end());
 }
 
 void BadEngine::init()
@@ -103,111 +110,122 @@ void BadEngine::init()
       glm::vec3 world_up(0.f, 1.f, 0.f);
 
       cam_ = new Camera(window_, camera_pos, camera_front, world_up);
+      gl_cbs::p_camera = cam_;
+
+      parser_.parse("TriangulatedSphere.obj");
+      demo_add_spheres();
+     // parser_.parse("cube.obj");
+
+      glEnable(GL_DEPTH_TEST);
+      glClearColor(.7f, .8f, .5f, 1.f);
+      glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+      glfwSetCursorPosCallback(window_, gl_cbs::mouse_drag_cb);
+      glfwSetScrollCallback(window_, gl_cbs::mouse_scroll_cb);
+
+      //const glm::mat4 scaled_mat = glm::scale(glm::mat4(), glm::vec3(.01f, .01f, .01f));
+
+      glGenVertexArrays(1, sphere_vao_);
+      glBindVertexArray(sphere_vao_[0]);
+
+
+      /*auto vertices = parser_.get_vertices();
+      auto face_indices = parser_.get_face_indices();
+      auto normals = parser_.get_normals();
+      auto face_normal_indices = parser_.get_face_normal_indices();*/
+      sphere_data_ = parser_.get_data();
+      sphere_indices_ = parser_.get_indices();
+
+      glGenBuffers(sizeof(sphere_vbos_) / sizeof(sphere_vbos_[0]),
+                   sphere_vbos_);
+      glBindBuffer(GL_ARRAY_BUFFER,
+                   sphere_vbos_[0]);
+      glBufferData(GL_ARRAY_BUFFER,
+                   sphere_data_.size() * sizeof(sphere_data_[0]),
+                   &sphere_data_[0],
+                   GL_STATIC_DRAW);
+      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sphere_vbos_[1]);
+      glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                   sphere_indices_.size() * sizeof(sphere_indices_[0]),
+                   &sphere_indices_[0],
+                   GL_STATIC_DRAW);
+
+      glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), reinterpret_cast< void * >(0));
+      glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), reinterpret_cast< void * >(3 * sizeof(GLfloat)));
+
+      glEnableVertexAttribArray(0);
+      glEnableVertexAttribArray(1);
+
+      sphere_shader_programme_ = Shader("base_vs.glsl", "base_fs.glsl");
+
+      if (sphere_shader_programme_.get_error())
+      {
+        auto msgv = sphere_shader_programme_.get_message();
+        msg_ = VMSG_TO_STR(msgv);
+        status_ = sphere_shader_programme_.get_error() ? R_FAILURE : R_SUCCESS;
+      }
     }
     else
     {
-      status_ = -1;
+      status_ = R_FAILURE;
       msg_ = "Cannot create opengl window.";
     }
   }
   else
   {
-    status_ = -1;
+    status_ = R_FAILURE;
     msg_ = "Cannot initiate opengl.";
   }
 
-  gl_cbs::p_camera = cam_;
 }
 
 BadEngine::operator bool() const
 {
-  return status_ == 0;
+  return status_ == R_SUCCESS;
 }
-
-void BadEngine::run()
+void BadEngine::draw()
 {
-  glEnable(GL_DEPTH_TEST);
-
-  glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-  glfwSetCursorPosCallback(window_, gl_cbs::mouse_drag_cb);
-  glfwSetScrollCallback(window_, gl_cbs::mouse_scroll_cb);
-
-  /*GLuint vao[] = { 0 };
-  glGenVertexArrays(1, vao);
-  glBindVertexArray(vao[0]);
-
-  GLuint vbo[] = { 0 };
-  glGenBuffers(sizeof(vbo) / sizeof(vbo[0]), vbo);
-  glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(cube_coords_w_textures), cube_coords_w_textures, GL_STATIC_DRAW);
-
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), reinterpret_cast< void * >(0));
-  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), reinterpret_cast< void * >(3 * sizeof(GLfloat)));
-
-  glEnableVertexAttribArray(0);
-  glEnableVertexAttribArray(1);
-*/
-
-  GLuint vbo[] = { 0 };
-  glGenBuffers(sizeof(vbo) / sizeof(vbo[0]), vbo);
-  glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-  glBufferData(GL_ARRAY_BUFFER,
-               sizeof(cube_coords_w_normals_n_textures),
-               cube_coords_w_normals_n_textures,
-               GL_STATIC_DRAW);
-  GLuint vao = 0;
-  glGenVertexArrays(1, &vao);
-
-
-  // Lamp vertices.
-  glBindVertexArray(vao);
-
-  glVertexAttribPointer(0, 3,
-                        GL_FLOAT, GL_FALSE,
-                        8 * sizeof(GLfloat), reinterpret_cast< void * >(0));
-  glEnableVertexAttribArray(0);
-
-  Shader shader_programme = Shader("base_vs.glsl", "base_fs.glsl");
-
-  if (shader_programme.get_error())
-  {
-    auto msgv = shader_programme.get_message();
-    msg_ = VMSG_TO_STR(msgv);
-    status_ = shader_programme.get_status();
-  }
-
-  shader_programme.use();
-  glBindVertexArray(vao);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  sphere_shader_programme_.use();
 
   glm::mat4 view_trans = cam_->get_view();
   glm::mat4 projection_trans = cam_->get_projection();
 
-  while (*this && !glfwWindowShouldClose(window_))
+  //glBindVertexArray(vao);
+  sphere_shader_programme_.set_mat4("view", view_trans);
+  sphere_shader_programme_.set_mat4("projection", projection_trans);
+
+  for (Sphere *sphere : spheres_)
   {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    shader_programme.use();
-
-
-    glBindVertexArray(vao);
-    shader_programme.set_mat4("view", view_trans);
-    shader_programme.set_mat4("projection", projection_trans);
-
     glm::mat4 model_trans;
-    model_trans = glm::translate(model_trans, cube_positions[0]);
-    shader_programme.set_mat4("model", model_trans);
-    //glUniformMatrix4fv(model_trans_loc, 1, GL_FALSE, glm::value_ptr(model_trans));
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-    /*glm::mat4 model_trans = glm::translate(glm::mat4(), cube_positions[0]);
+    model_trans = glm::translate(model_trans,
+                                 glm::vec3(sphere->pos.x,
+                                           sphere->pos.y,
+                                           sphere->pos.z));
+    model_trans = glm::scale(model_trans, glm::vec3(.01, .01, .01));
+    sphere_shader_programme_.set_mat4("model", model_trans);
+    glDrawElements(GL_TRIANGLES, sphere_indices_.size(), GL_UNSIGNED_INT, NULL);
+  }
 
-    shader_programme.set_mat4("model", model_trans);
+  glfwSwapBuffers(window_);
+  glfwPollEvents();
 
-    glDrawArrays(GL_TRIANGLES, 0, 36);*/
+  cam_->update_time_deltas();
+  process_input();
+}
 
-    glfwSwapBuffers(window_);
-    glfwPollEvents();
+bool BadEngine::loop_done() const
+{
+  return !this || glfwWindowShouldClose(window_);
+}
 
-    cam_->update_time_deltas();
-    process_input();
+void BadEngine::run()
+{
+  sphere_shader_programme_.use();
+  glBindVertexArray(sphere_vao_[0]);
+
+  while (!loop_done())
+  {    
+    draw();
   }
 }
 
@@ -232,4 +250,37 @@ void BadEngine::process_input()
     glfwSetWindowShouldClose(window_, GL_TRUE);
 
   cam_->process_keyboard_input();
+}
+
+
+void BadEngine::demo_add_spheres()
+{
+  add_sphere(1.f, 2.f, -.8f);
+  add_sphere(-1.f, 2.f, -.8f);
+}
+
+int BadEngine::add_sphere(float x, float y, float z)
+{
+  spheres_.emplace_back(new Sphere(x, y, z));
+
+  return spheres_.size() - 1;
+}
+
+Sphere *BadEngine::get_sphere(int id) const
+{
+  return spheres_[id];
+}
+
+void BadEngine::set_sphere_pos(int id, float x, float y, float z)
+{
+  spheres_[id]->pos.x = x;
+  spheres_[id]->pos.y = y;
+  spheres_[id]->pos.z = z;
+}
+
+void BadEngine::set_sphere_velocity(int id, float x, float y, float z)
+{
+  spheres_[id]->pos.x = x;
+  spheres_[id]->pos.y = y;
+  spheres_[id]->pos.z = z;
 }
