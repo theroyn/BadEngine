@@ -8,10 +8,19 @@
 
 struct Sphere
 {
-  Sphere(float x, float y, float z) : pos(x, y, z), vel(0.f) {}
+  Sphere(float x, float y, float z, float rad) : pos(x, y, z), vel(0.f), acc(0.f), mass(1.f), rad(rad) {}
 
   glm::vec3 pos;
   glm::vec3 vel;
+  glm::vec3 acc;
+  float rad;
+  float mass;
+};
+
+struct SimpleBox
+{
+  SimpleBox() : pos(0.f) {}
+  glm::vec3 pos;
 };
 
 class BadEngine
@@ -35,9 +44,13 @@ public:
 
 public:
   Sphere *get_sphere(int id) const;
+  void    set_sphere_radius(float rad) { sphere_rad_ = rad; }
+  float   get_sphere_radius(float rad) const { return sphere_rad_; }
   void    set_sphere_pos(int id, float x, float y, float z);
   void    set_sphere_velocity(int id, float x, float y, float z);
+  void    set_sphere_acc(int id, float x, float y, float z);
   int     add_sphere(float x, float y, float z);
+  void    set_world_dims(glm::vec3 dims);
 
 private:
   void demo_add_spheres();
@@ -55,4 +68,13 @@ private:
   GLuint sphere_vao_[1];
   std::vector<unsigned int> sphere_indices_;
   std::vector<float> sphere_data_;
+  float sphere_rad_;
+
+  Shader box_shader_programme_;
+  GLuint box_vbos_[2];
+  GLuint box_vao_[1];
+  std::vector<unsigned int> box_indices_;
+  std::vector<float> box_data_;
+  glm::vec3 box_scale_;
+  SimpleBox box_;
 };

@@ -27,7 +27,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
@@ -88,18 +88,31 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_CONSOLE;APPLICATION_MODE;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_CONSOLE;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>$(R_GLM);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>
       </AdditionalOptions>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy $(OutputPath)* $(SolutionDir)CFD\  /e /y /i /r
+xcopy $(ProjectDir)*.glsl $(SolutionDir)CFD\ /e /y /i /r
+xcopy $(ProjectDir)*.obj $(SolutionDir)CFD\ /e /y /i /r</Command>
+      <Message>
+      </Message>
+    </PostBuildEvent>
+    <PreLinkEvent>
+      <Command>
+      </Command>
+      <Message>Move .lib file and all dependencies somewhere</Message>
+    </PreLinkEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -121,7 +134,6 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_CONSOLE;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -142,8 +154,14 @@ xcopy $(ProjectDir)*.glsl $(SolutionDir)CFD\ /e /y /i /r
 xcopy $(ProjectDir)*.obj $(SolutionDir)CFD\ /e /y /i /r</Command>
     </PostBuildEvent>
     <PostBuildEvent>
-      <Message>Move .lib file and all dependencies somewhere</Message>
+      <Message>
+      </Message>
     </PostBuildEvent>
+    <PreLinkEvent>
+      <Command>
+      </Command>
+      <Message>Move .lib file and all dependencies somewhere</Message>
+    </PreLinkEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -175,6 +193,8 @@ xcopy $(ProjectDir)*.obj $(SolutionDir)CFD\ /e /y /i /r</Command>
   <ItemGroup>
     <None Include="base_fs.glsl" />
     <None Include="base_vs.glsl" />
+    <None Include="box_fs.glsl" />
+    <None Include="box_vs.glsl" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

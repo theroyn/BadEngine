@@ -6,6 +6,9 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BadEngine", "BadEngine\BadEngine.vcxproj", "{0BE10A90-46F1-463F-AD93-789CFD290908}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CFD", "CFD\CFD.vcxproj", "{AF6F560E-CEEA-40FE-9DD3-2C1DC13E0E9A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0BE10A90-46F1-463F-AD93-789CFD290908} = {0BE10A90-46F1-463F-AD93-789CFD290908}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

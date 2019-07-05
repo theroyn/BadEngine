@@ -137,6 +137,42 @@ float cube_coords_w_textures[] = {
     -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 };
 
+float normalized_cube_coords[] =
+{
+  -.5f, -.5f, -.5f,
+   .5f, -.5f, -.5f,
+   .5f,  .5f, -.5f,
+  -.5f,  .5f, -.5f,
+
+  -.5f, -.5f, .5f,
+   .5f, -.5f, .5f,
+   .5f,  .5f, .5f,
+  -.5f,  .5f, .5f,
+};
+
+int normalized_cube_indices[] =
+{
+  0, 1, 2, 3, // front
+  0, 4, 7, 3, // left
+  2, 6, 7, // top
+  4, 5, 6, // back
+  2, 1, 5 // right
+  //0, 1, 5, 4 // bottom
+};
+
+float normalized_square_coords[] =
+{
+  -.5f, -.5f, -.5f,
+   .5f, -.5f, -.5f,
+   .5f,  .5f, -.5f,
+  -.5f,  .5f, -.5f,
+};
+
+int normalized_square_indices[] =
+{
+  0, 1, 2, 3 // front
+};
+
 glm::vec3 cube_positions[] = 
 {
   glm::vec3(0.0f,  -1.f,  0.0f),
