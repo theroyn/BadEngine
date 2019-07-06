@@ -2,18 +2,61 @@
 
 #include <stdlib.h>     /* srand, rand */
 #include <time.h>       /* time */
+#include <gtx/norm.hpp>
 
-void Simulator::handle_collisions()
+static void
+handle_spheres_coll(Sphere *s1, Sphere *s2, float bumpiness = .9f);
+
+Simulator::Simulator() : h_(.05f), dampening_(.002f), spheres_n_(500)
 {
-  for (auto s : spheres_)
+}
+
+void
+handle_spheres_coll(Sphere *s1, Sphere *s2, float bumpiness)
+{
+  glm::vec3 n = glm::normalize(s1->pos - s2->pos);
+  glm::vec3 vrel = s1->vel - s2->vel;
+  float verl_scl = glm::dot(vrel, n);
+
+  if (verl_scl < 0)
   {
-    world_.handle_sphere_collision(s);
+    float imp_nom = -1 * (1 + bumpiness) * verl_scl;
+    float imp_denom = (1 / s1->mass) + (1 / s2->mass);
+    float imp = imp_nom / imp_denom;
+
+    s1->vel += (imp / s1->mass) * n;
+    s2->vel -= (imp / s2->mass) * n;
   }
 }
 
-Simulator::Simulator() : h_(.05f), dampening_(.002f)
+void Simulator::handle_collisions()
 {
+  //for (auto sit = 0; sit != spheres_.size(); ++sit)
+  //{
+  //  Sphere *s1 = spheres_[sit];
+  //  for (auto sit2 = sit + 1; sit2 != spheres_.size(); ++sit2)
+  //  {
+  //    handle_spheres_coll(s1, spheres_[sit2]);
+  //  }
+
+  //  world_.handle_sphere_collision(s1);
+  //}
+  for (auto sit = spheres_.begin(); sit != spheres_.end(); ++sit)
+  {
+    Sphere *s1 = *sit;
+    for (auto sit2 = sit + 1; sit2 != spheres_.end(); ++sit2)
+    {
+      Sphere *s2 = *sit2;
+
+      //if (glm::length2(s2->pos - s1->pos) <= s1->rad + s2->rad)
+      if (glm::l2Norm(s1->pos, s2->pos) <= s1->rad + s2->rad)
+        handle_spheres_coll(s1, *sit2);
+    }
+
+    world_.handle_sphere_collision(s1);
+  }
 }
+
 
 
 Simulator::~Simulator()
@@ -62,7 +105,7 @@ void Simulator::init()
   
 
   std::vector<int> spheres_indices;
-  for (int i = 0; i < 500; ++i)
+  for (int i = 0; i < spheres_n_; ++i)
     spheres_indices.push_back(engine_.add_sphere(get_rand(), get_rand(), get_rand()));
   for (int ind : spheres_indices)
   {
@@ -94,23 +137,19 @@ void Simulator::run()
 
 
 void
-ContainingBox::handle_sphere_coord_collision(const glm::vec3 &pos,
-                                             glm::vec3 &vel,
-                                             float rad,
-                                             float glm::vec3::* coord)
+ContainingBox::handle_sphere_coord_collision(Sphere *s,
+                                             float glm::vec3::*coord)
 {
-  if (pos.*coord - rad <= pos_.*coord - dims_.*coord / 2 && vel.*coord < 0)
-    vel.*coord *= -.8;
+  if (s->pos.*coord - s->rad <= pos_.*coord - dims_.*coord / 2 && s->vel.*coord < 0)
+    s->vel.*coord *= -s->bounciness;
 
-  if (pos.*coord + rad >= pos_.*coord + dims_.*coord / 2 && vel.*coord > 0)
-    vel.*coord *= -.8;
+  if (s->pos.*coord + s->rad >= pos_.*coord + dims_.*coord / 2 && s->vel.*coord > 0)
+    s->vel.*coord *= -s->bounciness;
 }
 
 void ContainingBox::handle_sphere_collision(Sphere *s)
 {
-  const glm::vec3 &p = s->pos;
-
-  handle_sphere_coord_collision(s->pos, s->vel, s->rad, &glm::vec3::x);
-  handle_sphere_coord_collision(s->pos, s->vel, s->rad, &glm::vec3::y);
-  handle_sphere_coord_collision(s->pos, s->vel, s->rad, &glm::vec3::z);
+  handle_sphere_coord_collision(s, &glm::vec3::x);
+  handle_sphere_coord_collision(s, &glm::vec3::y);
+  handle_sphere_coord_collision(s, &glm::vec3::z);
 }

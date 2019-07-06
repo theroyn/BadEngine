@@ -12,9 +12,7 @@ public:
 
 public:
   void handle_sphere_collision(Sphere *s);
-  void handle_sphere_coord_collision(const glm::vec3 &pos,
-                                     glm::vec3 &vel,
-                                     float rad,
+  void handle_sphere_coord_collision(Sphere *s,
                                      float glm::vec3::* coord);
   glm::vec3 dims() const { return dims_; }
 
@@ -43,6 +41,7 @@ private:
 
 private:
   float h_, dampening_;
+  unsigned int spheres_n_;
   BadEngine engine_;
   std::vector<glm::vec3> g_forces_;
   std::vector<Sphere *> spheres_;

@@ -104,6 +104,8 @@
     <PostBuildEvent>
       <Command>xcopy $(OutputPath)* $(SolutionDir)CFD\  /e /y /i /r
 xcopy $(ProjectDir)*.glsl $(SolutionDir)CFD\ /e /y /i /r
+xcopy $(ProjectDir)*.glsl $(OutputPath) /e /y /i /r
+xcopy $(ProjectDir)*.obj $(OutputPath) /e /y /i /r
 xcopy $(ProjectDir)*.obj $(SolutionDir)CFD\ /e /y /i /r</Command>
       <Message>
       </Message>
@@ -151,6 +153,8 @@ xcopy $(ProjectDir)*.obj $(SolutionDir)CFD\ /e /y /i /r</Command>
     <PostBuildEvent>
       <Command>xcopy $(OutputPath)* $(SolutionDir)CFD\  /e /y /i /r
 xcopy $(ProjectDir)*.glsl $(SolutionDir)CFD\ /e /y /i /r
+xcopy $(ProjectDir)*.glsl $(OutputPath) /e /y /i /r
+xcopy $(ProjectDir)*.obj $(OutputPath) /e /y /i /r
 xcopy $(ProjectDir)*.obj $(SolutionDir)CFD\ /e /y /i /r</Command>
     </PostBuildEvent>
     <PostBuildEvent>
