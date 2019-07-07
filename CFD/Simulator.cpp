@@ -7,7 +7,7 @@
 static void
 handle_spheres_coll(Sphere *s1, Sphere *s2, float bumpiness = .9f);
 
-Simulator::Simulator() : h_(.05f), dampening_(.002f), spheres_n_(500)
+Simulator::Simulator() : h_(.05f), dampening_(.002f), spheres_n_(0)
 {
 }
 

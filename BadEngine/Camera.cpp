@@ -110,8 +110,8 @@ float Camera::get_fov() const
 
 void Camera::update_view()
 {
-  glm::mat4 m_pitch = glm::rotate(glm::mat4(), glm::radians(( float )pitch_), glm::vec3(1., 0., 0.));
-  glm::mat4 m_yaw = glm::rotate(glm::mat4(), glm::radians(( float )yaw_)  , glm::vec3(0., 1., 0.));
+  glm::mat4 m_pitch = glm::rotate(glm::mat4(1.f), glm::radians(( float )pitch_), glm::vec3(1., 0., 0.));
+  glm::mat4 m_yaw = glm::rotate(glm::mat4(1.f), glm::radians(( float )yaw_)  , glm::vec3(0., 1., 0.));
 
   front_ = glm::normalize(m_yaw * m_pitch * glm::vec4(orig_front_, 1.f));
   glm::vec3 right = glm::normalize(glm::cross(front_, world_up_));

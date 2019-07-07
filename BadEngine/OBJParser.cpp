@@ -22,11 +22,14 @@ OBJParser::~OBJParser()
 
 bool OBJParser::parse(const std::string &path)
 {
-  bool success = true;
+  bool success = false;
   std::ifstream fd{ path.c_str() };
+
   if (fd.is_open())
   {
+    success = true;
     std::string line;
+
     while (std::getline(fd, line))
     {
       InputType t;
@@ -129,7 +132,8 @@ bool OBJParser::parse(const std::string &path)
     }
   }
 
-  process();
+  if (success)
+    process();
 
   return success;
 }

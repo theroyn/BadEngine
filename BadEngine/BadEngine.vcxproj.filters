@@ -41,7 +41,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
     <None Include="base_vs.glsl">
       <Filter>shaders</Filter>
     </None>
@@ -54,6 +53,7 @@
     <None Include="box_vs.glsl">
       <Filter>shaders</Filter>
     </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="utils.h">
