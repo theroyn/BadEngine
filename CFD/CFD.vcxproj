@@ -161,13 +161,17 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CFD.cpp" />
+    <ClCompile Include="CollisionSolver.cpp" />
     <ClCompile Include="Simulator.cpp" />
+    <ClCompile Include="SphereGridMap.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CollisionSolver.h" />
     <ClInclude Include="Simulator.h" />
+    <ClInclude Include="SphereGridMap.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

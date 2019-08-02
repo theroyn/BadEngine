@@ -4,60 +4,20 @@
 #include <time.h>       /* time */
 #include <gtx/norm.hpp>
 
-static void
-handle_spheres_coll(Sphere *s1, Sphere *s2, float bumpiness = .9f);
 
-Simulator::Simulator() : h_(.05f), dampening_(.002f), spheres_n_(500)
+Simulator::Simulator(unsigned int spheres_n) : sphere_coll_alg_(sphere_coll_alg::grid),
+                         h_(.08f),
+                         dampening_(.001f),
+                         spheres_n_(spheres_n),
+                         sphere_rad_(.1f)
 {
-}
-
-void
-handle_spheres_coll(Sphere *s1, Sphere *s2, float bumpiness)
-{
-  glm::vec3 n = glm::normalize(s1->pos - s2->pos);
-  glm::vec3 vrel = s1->vel - s2->vel;
-  float verl_scl = glm::dot(vrel, n);
-
-  if (verl_scl < 0)
-  {
-    float imp_nom = -1 * (1 + bumpiness) * verl_scl;
-    float imp_denom = (1 / s1->mass) + (1 / s2->mass);
-    float imp = imp_nom / imp_denom;
-
-    s1->vel += (imp / s1->mass) * n;
-    s2->vel -= (imp / s2->mass) * n;
-  }
+  col_solver_ = SolverFactory::create(sphere_coll_alg_, spheres_, sphere_rad_);
 }
 
 void Simulator::handle_collisions()
 {
-  //for (auto sit = 0; sit != spheres_.size(); ++sit)
-  //{
-  //  Sphere *s1 = spheres_[sit];
-  //  for (auto sit2 = sit + 1; sit2 != spheres_.size(); ++sit2)
-  //  {
-  //    handle_spheres_coll(s1, spheres_[sit2]);
-  //  }
-
-  //  world_.handle_sphere_collision(s1);
-  //}
-  for (auto sit = spheres_.begin(); sit != spheres_.end(); ++sit)
-  {
-    Sphere *s1 = *sit;
-    for (auto sit2 = sit + 1; sit2 != spheres_.end(); ++sit2)
-    {
-      Sphere *s2 = *sit2;
-
-      //if (glm::length2(s2->pos - s1->pos) <= s1->rad + s2->rad)
-      if (glm::l2Norm(s1->pos, s2->pos) <= s1->rad + s2->rad)
-        handle_spheres_coll(s1, *sit2);
-    }
-
-    world_.handle_sphere_collision(s1);
-  }
+  col_solver_->handle_collisions();
 }
-
-
 
 Simulator::~Simulator()
 {
@@ -91,25 +51,31 @@ void Simulator::integrate()
 static float get_rand(float low=-.5f, float high = .5f)
 {
   float r3 = low + static_cast < float > (rand()) / (static_cast < float > (RAND_MAX / (high - low)));
-  /*srand(time(nullptr));
-  int X = 30;
-  float num = ((float(rand() % X) / float(X-1)) - .5f) * 2.f;
 
-  return num;*/
   return r3;
 }
 void Simulator::init()
 {
-  engine_.set_sphere_radius(.1f);
+  engine_.set_sphere_radius(sphere_rad_);
   engine_.init();
   
-
   std::vector<int> spheres_indices;
+  glm::vec3 dims = col_solver_->dims();
+  float w = dims.x / 2.;
+  float h = dims.y / 2.;
+  float d = dims.z / 2.;
+  const bool small_start = false;
+
   for (int i = 0; i < spheres_n_; ++i)
-    spheres_indices.push_back(engine_.add_sphere(get_rand(), get_rand(), get_rand()));
+  {
+    if (small_start)
+      spheres_indices.push_back(engine_.add_sphere(get_rand(), get_rand(), get_rand()));
+    else
+      spheres_indices.push_back(engine_.add_sphere(get_rand(-w, w), get_rand(-h, h), get_rand(-d, d)));
+  }
+
   for (int ind : spheres_indices)
   {
-    //engine_.set_sphere_velocity(ind, .005f, .005f, -.001f);
     Sphere *s = engine_.get_sphere(ind);
     s->vel.x = get_rand(-.2, .2);
     s->vel.y = get_rand(-.2, .2);
@@ -117,9 +83,9 @@ void Simulator::init()
     spheres_.push_back(s);
   }
 
-  add_global_force(glm::vec3(0.f, -.005f, 0.f)); // gravity
+  add_global_force(glm::vec3(0.f, -.1f, 0.f)); // gravity
 
-  engine_.set_world_dims(world_.dims());
+  engine_.set_world_dims(col_solver_->dims());
 }
 
 
@@ -133,23 +99,4 @@ void Simulator::run()
 
     integrate();
   }
-}
-
-
-void
-ContainingBox::handle_sphere_coord_collision(Sphere *s,
-                                             float glm::vec3::*coord)
-{
-  if (s->pos.*coord - s->rad <= pos_.*coord - dims_.*coord / 2 && s->vel.*coord < 0)
-    s->vel.*coord *= -s->bounciness;
-
-  if (s->pos.*coord + s->rad >= pos_.*coord + dims_.*coord / 2 && s->vel.*coord > 0)
-    s->vel.*coord *= -s->bounciness;
-}
-
-void ContainingBox::handle_sphere_collision(Sphere *s)
-{
-  handle_sphere_coord_collision(s, &glm::vec3::x);
-  handle_sphere_coord_collision(s, &glm::vec3::y);
-  handle_sphere_coord_collision(s, &glm::vec3::z);
 }

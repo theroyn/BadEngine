@@ -15,9 +15,9 @@ Camera::Camera(GLFWwindow *window,
   yaw_(0.),
   cursor_(0., 0.),
   fov_(DEFAULT_ZOOM),
-  zoom_speed_base_(400.f),
-  translation_speed_base_(1.5f),
-  spin_speed_base_(3.f),
+  zoom_speed_base_(1000.f),
+  translation_speed_base_(5.f),
+  spin_speed_base_(7.5f),
   is_cursor_init_(false)
 {
   up_ = world_up_;
@@ -237,7 +237,7 @@ void Camera::update_time_deltas()
   delta_time_ = curr_time - last_frame_;
   last_frame_ = curr_time;
 
-  spin_speed_ = spin_speed_base_ * 2.5f * delta_time_;
-  translation_speed_ = translation_speed_base_ * 2.5f * delta_time_;
-  zoom_speed_ = zoom_speed_base_*2.5f * delta_time_;
+  spin_speed_ = spin_speed_base_ * delta_time_;
+  translation_speed_ = translation_speed_base_ * delta_time_;
+  zoom_speed_ = zoom_speed_base_ * delta_time_;
 }

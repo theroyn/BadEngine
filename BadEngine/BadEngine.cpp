@@ -8,8 +8,6 @@
 #include "BadEngine.h"
 #include "coords.h"
 #include "Shader.h"
-#include "Sphere.h"
-
 const GLuint SCR_WIDTH = 800;
 const GLuint SCR_HEIGHT = 600;
 
@@ -111,8 +109,8 @@ void BadEngine::init()
       inf << "Renderer:" << renderer << std::endl << "OpenGL version supported:" << version << std::endl;
       utility::dbg_print(inf.str());
 
-      glm::vec3 camera_pos(0.f, 0.f, 6.f);
-      glm::vec3 camera_front(0.f, 0.f, -1.f);
+      glm::vec3 camera_pos(2.f, 2.f, 10.f);
+      glm::vec3 camera_front(-.3f, -.3f, -1.f);
       glm::vec3 world_up(0.f, 1.f, 0.f);
 
       cam_ = new Camera(window_, camera_pos, camera_front, world_up);

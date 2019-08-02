@@ -3,29 +3,14 @@
 #include "gl_incs.h"
 #include <vector>
 #include "BadEngine.h"
+#include "Sphere.h"
+#include "CollisionSolver.h"
 
-class ContainingBox
-{
-public:
-  ContainingBox() : pos_(0.f, 0.f, 0.f), dims_(3.f) {}
-  ContainingBox(const SimpleBox &box) : pos_(box.pos), dims_(3.f) {}
-
-public:
-  void handle_sphere_collision(Sphere *s);
-  void handle_sphere_coord_collision(Sphere *s,
-                                     float glm::vec3::* coord);
-  glm::vec3 dims() const { return dims_; }
-
-
-private:
-  glm::vec3 pos_; // position of the box's center.
-  glm::vec3 dims_;
-};
 
 class Simulator
 {
 public:
-  Simulator();
+  Simulator(unsigned int spheres_n);
   ~Simulator();
 
 public:
@@ -38,12 +23,15 @@ public:
 private:
   void integrate();
   void handle_collisions();
+  void handle_sphere_collisions_naive_alg();
 
 private:
   float h_, dampening_;
   unsigned int spheres_n_;
+  float sphere_rad_;
   BadEngine engine_;
   std::vector<glm::vec3> g_forces_;
   std::vector<Sphere *> spheres_;
-  ContainingBox world_;
+  CollisionSolver *col_solver_;
+  const sphere_coll_alg sphere_coll_alg_;
 };
