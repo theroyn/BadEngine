@@ -128,7 +128,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(R_GLM);D:\Users\Roy\source\repos\CFDRenderer\BadEngine;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(R_GLM);D:\Users\Roy\source\repos\CFDRenderer\BadEngine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -177,6 +177,8 @@
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\packages\nupengl.core.redist.0.1.0.1\build\native\nupengl.core.redist.targets" Condition="Exists('..\packages\nupengl.core.redist.0.1.0.1\build\native\nupengl.core.redist.targets')" />
     <Import Project="..\packages\nupengl.core.0.1.0.1\build\native\nupengl.core.targets" Condition="Exists('..\packages\nupengl.core.0.1.0.1\build\native\nupengl.core.targets')" />
+    <Import Project="..\packages\tbb_oss.redist.9.107.0.0\build\native\tbb_oss.redist.targets" Condition="Exists('..\packages\tbb_oss.redist.9.107.0.0\build\native\tbb_oss.redist.targets')" />
+    <Import Project="..\packages\tbb_oss.9.107.0.0\build\native\tbb_oss.targets" Condition="Exists('..\packages\tbb_oss.9.107.0.0\build\native\tbb_oss.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -184,5 +186,7 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\nupengl.core.redist.0.1.0.1\build\native\nupengl.core.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\nupengl.core.redist.0.1.0.1\build\native\nupengl.core.redist.targets'))" />
     <Error Condition="!Exists('..\packages\nupengl.core.0.1.0.1\build\native\nupengl.core.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\nupengl.core.0.1.0.1\build\native\nupengl.core.targets'))" />
+    <Error Condition="!Exists('..\packages\tbb_oss.redist.9.107.0.0\build\native\tbb_oss.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\tbb_oss.redist.9.107.0.0\build\native\tbb_oss.redist.targets'))" />
+    <Error Condition="!Exists('..\packages\tbb_oss.9.107.0.0\build\native\tbb_oss.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\tbb_oss.9.107.0.0\build\native\tbb_oss.targets'))" />
   </Target>
 </Project>

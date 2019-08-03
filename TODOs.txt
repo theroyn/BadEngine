@@ -1,0 +1,24 @@
+--------------------tasks-----------------------------
+1. parallelize coldet in grid alg.
+2. allow world spinning.
+3. implement coldet in gpu with opencl.
+4. implement cfd
+
+-------------------breakdown--------------------------
+(1)
+a) XXdecide on a parallel library- omp? tbb? something else?
+b) verify thread safety- I suspect pos is updated in each sphere coldet handling, which will cause race conditions.
+
+(2)
+a) CollisionSolver::handle_world_collision_coord updates.
+b) add callbacks in BadEngine- turn on for mouse rotation cbs whenever some key was pressed?
+
+(3)
+a) add pos vbo control transfer from ogl to ocl.
+b) implement naive alg- per each sphere iterate all spheres.
+c) implement grid alg.
+
+(4)
+a) implement forces handling.
+b) add rendering radius/influendce radius concept- the calculations and grid size will depend on influence.
+c) implement an attractive way to play with the fluid.

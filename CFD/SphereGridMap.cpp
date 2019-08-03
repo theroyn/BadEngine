@@ -11,7 +11,7 @@ void SphereGridMap::update_map(const std::vector<Sphere *> &spheres)
   }
 }
 
-void SphereGridMap::get_by_coords(std::list<Sphere *> &vec, const glm::uvec3 &coords)
+void SphereGridMap::get_by_coords(std::list<Sphere *> &vec, const glm::uvec3 &coords) const
 {
   auto r = map_.equal_range(get_flat_idx(coords));
 
@@ -21,7 +21,7 @@ void SphereGridMap::get_by_coords(std::list<Sphere *> &vec, const glm::uvec3 &co
   }
 }
 
-void SphereGridMap::get_neighbours(const Sphere *s, std::list<Sphere *> &res)
+void SphereGridMap::get_neighbours(const Sphere *s, std::list<Sphere *> &res) const
 {
   auto coords = get_3d_idx(s->pos);
 
@@ -76,7 +76,7 @@ size_t SphereGridMap::insert(Sphere *s)
  * (x, y, z)=> x + y*(world_w_n+1) + z*(world_h_n+1)*(world_w_n + 1)
  * d(h+1)(w+1) + h(w+1)+w+1 -1 = d(h+1)(w+1)+(w+1)(h+1) - 1 = (h+1)*(w+1)*(d+1) - 1.
  */
-size_t SphereGridMap::get_flat_idx(size_t x, size_t y, size_t z)
+size_t SphereGridMap::get_flat_idx(size_t x, size_t y, size_t z) const
 {
   size_t res = x +
                y * (world_cells_n_.x + 1) +
@@ -85,20 +85,20 @@ size_t SphereGridMap::get_flat_idx(size_t x, size_t y, size_t z)
   return res;
 }
 
-size_t SphereGridMap::get_flat_idx(const glm::uvec3 &coords)
+size_t SphereGridMap::get_flat_idx(const glm::uvec3 &coords) const
 {
 
   return get_flat_idx(coords.x, coords.y, coords.z);
 }
 
-size_t SphereGridMap::get_flat_idx(const glm::vec3 &pos)
+size_t SphereGridMap::get_flat_idx(const glm::vec3 &pos) const
 {
   size_t res = get_flat_idx(get_3d_idx(pos));
 
   return res;
 }
 
-glm::uvec3 SphereGridMap::get_3d_idx(const glm::vec3 &pos)
+glm::uvec3 SphereGridMap::get_3d_idx(const glm::vec3 &pos) const
 {
   //const glm::uvec3 coords = pos / cell_dims_;
   const glm::uvec3 coords = (pos + (world_dims_ / 2.f)) / cell_dims_;

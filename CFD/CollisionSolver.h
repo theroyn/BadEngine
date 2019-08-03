@@ -4,12 +4,14 @@
 #include <vector>
 #include "gl_incs.h"
 #include "SphereGridMap.h"
+#include <tbb/blocked_range.h>
 
 enum class sphere_coll_alg
 {
   naive,
   grid
 };
+
 
 class CollisionSolver
 {
@@ -57,6 +59,7 @@ public:
 
 class GridCollisionSolver : public CollisionSolver
 {
+  friend class GridRangeSolver;
 public:
   GridCollisionSolver(std::vector<Sphere *> &spheres, float rad) : CollisionSolver(spheres, rad),
                                                         map_(rad_, dims())
@@ -73,4 +76,20 @@ class SolverFactory
 {
 public:
   static CollisionSolver *create(sphere_coll_alg type, std::vector<Sphere *> &spheres, float radius);
+};
+
+class GridRangeSolver
+{
+public:
+  GridRangeSolver(std::vector<Sphere *> &spheres,
+                  const SphereGridMap &map,
+                  GridCollisionSolver *solver);
+
+public:
+  void operator() (const tbb::blocked_range<size_t> &r) const;
+
+private:
+  std::vector<Sphere *> &spheres_;
+  const SphereGridMap &map_;
+  GridCollisionSolver *solver_;
 };

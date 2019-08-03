@@ -10,6 +10,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CFD", "CFD\CFD.vcxproj", "{
 		{0BE10A90-46F1-463F-AD93-789CFD290908} = {0BE10A90-46F1-463F-AD93-789CFD290908}
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{C1718795-9FCC-4E4D-BFF6-2066C2087FD5}"
+	ProjectSection(SolutionItems) = preProject
+		TODOs.txt = TODOs.txt
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
