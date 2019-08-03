@@ -270,3 +270,8 @@ __pycache__/
 /CFD/base_vs.glsl
 /CFD/base_fs.glsl
 /CFD/visualinfo.exe
+*.exe
+/CFD/IEShims.dll
+/CFD/tbbmalloc_proxy.dll
+/CFD/tbbmalloc.dll
+/CFD/tbb.dll
