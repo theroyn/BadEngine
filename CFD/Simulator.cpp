@@ -7,7 +7,8 @@
 
 Simulator::Simulator(unsigned int spheres_n) : sphere_coll_alg_(sphere_coll_alg::grid),
                          h_(.08f),
-                         dampening_(.001f),
+                         base_h_(h_),
+                         dampening_(.003f),
                          spheres_n_(spheres_n),
                          sphere_rad_(.1f)
 {
@@ -30,6 +31,21 @@ void Simulator::add_global_force(glm::vec3 f)
 
 void Simulator::integrate()
 {
+  static bool init = true;
+
+  float curr_time = ( float )glfwGetTime();
+
+  if (init)
+  {
+    init = false;
+    last_time_ = curr_time;
+  }
+
+  float delta = curr_time - last_time_;
+  last_time_ = curr_time;
+
+  h_ = base_h_ * 50.f * delta;
+
   for (auto sphere : spheres_)
   {
     sphere->acc = std::move(glm::vec3(0.f));

@@ -27,8 +27,10 @@ private:
 
 private:
   float h_, dampening_;
+  const float base_h_;
   unsigned int spheres_n_;
   float sphere_rad_;
+  float last_time_;
   BadEngine engine_;
   std::vector<glm::vec3> g_forces_;
   std::vector<Sphere *> spheres_;
