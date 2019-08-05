@@ -77,12 +77,12 @@ void Simulator::init()
   
   std::vector<int> spheres_indices;
   glm::vec3 dims = col_solver_->dims();
-  float w = dims.x / 2.;
-  float h = dims.y / 2.;
-  float d = dims.z / 2.;
+  float w = dims.x / 2.f;
+  float h = dims.y / 2.f;
+  float d = dims.z / 2.f;
   const bool small_start = false;
 
-  for (int i = 0; i < spheres_n_; ++i)
+  for (unsigned int i = 0; i < spheres_n_; ++i)
   {
     if (small_start)
       spheres_indices.push_back(engine_.add_sphere(get_rand(), get_rand(), get_rand()));
@@ -93,9 +93,9 @@ void Simulator::init()
   for (int ind : spheres_indices)
   {
     Sphere *s = engine_.get_sphere(ind);
-    s->vel.x = get_rand(-.2, .2);
-    s->vel.y = get_rand(-.2, .2);
-    s->vel.z = get_rand(-.2, .2);
+    s->vel.x = get_rand(-.2f, .2f);
+    s->vel.y = get_rand(-.2f, .2f);
+    s->vel.z = get_rand(-.2f, .2f);
     spheres_.push_back(s);
   }
 

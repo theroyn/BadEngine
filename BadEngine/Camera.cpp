@@ -86,11 +86,11 @@ void Camera::process_keyboard_input()
     reset_zoom();
 }
 
-void Camera::zoom(double y_off)
+void Camera::zoom(float y_off)
 {
   fov_ -= zoom_speed_ * y_off;
 
-  if (double upper_lim = 180.; fov_ + CAMERA_EPSILON > upper_lim)
+  if (float upper_lim = 180.f; fov_ + CAMERA_EPSILON > upper_lim)
     fov_ = upper_lim - CAMERA_EPSILON;
   else if (fov_ - CAMERA_EPSILON < 0)
     fov_ = CAMERA_EPSILON;
@@ -131,7 +131,7 @@ glm::mat4 Camera::get_view() const
 
 glm::mat4 Camera::get_projection() const
 {
-  GLfloat p = glfwGetTime();
+  GLfloat p = (GLfloat)glfwGetTime();
   float x = 0.f, z = 0.f;
   static float radius = 10.f;
 
@@ -182,23 +182,23 @@ void Camera::set_cursor(double x, double y)
 
   if (!is_cursor_init_)
   {
-    cursor_.x = x;
-    cursor_.y = y;
+    cursor_.x = (float)x;
+    cursor_.y = (float)y;
     is_cursor_init_ = true;
   }
 
-  double xoff = x - cursor_.x;
-  double yoff = y - cursor_.y;
+  float xoff = (float)x - cursor_.x;
+  float yoff = (float)y - cursor_.y;
 
-  cursor_.x = x;
-  cursor_.y = y;
+  cursor_.x = (float)x;
+  cursor_.y = (float)y;
   
   //increase_pitch(yoff);
   increase_yaw(xoff);
   offset_angles(xoff, yoff);
 }
 
-void Camera::offset_angles(double xoff, double yoff)
+void Camera::offset_angles(float xoff, float yoff)
 {
   pitch_ -= spin_speed_ * yoff;
   yaw_ -= spin_speed_ * xoff;
@@ -209,7 +209,7 @@ void Camera::offset_angles(double xoff, double yoff)
     pitch_ = -89.;
 }
 
-void Camera::increase_pitch(double off)
+void Camera::increase_pitch(float off)
 {
   //cout << "pitch:" << pitch_ << ", off:" << spin_speed_ * off << endl;
   pitch_ -= spin_speed_ * off;
@@ -221,7 +221,7 @@ void Camera::increase_pitch(double off)
 
   update_view();
 }
-void Camera::increase_yaw(double off)
+void Camera::increase_yaw(float off)
 {
   //cout << "yaw:" << yaw_ << ", radians(yaw):" << glm::radians(yaw_) << ", off:" << spin_speed_ * off << endl;
   //yaw_ = glm::mod(yaw_ + off, 360.);
@@ -233,7 +233,7 @@ void Camera::increase_yaw(double off)
 
 void Camera::update_time_deltas()
 {
-  GLfloat curr_time = glfwGetTime();
+  GLfloat curr_time = (GLfloat)glfwGetTime();
   delta_time_ = curr_time - last_frame_;
   last_frame_ = curr_time;
 

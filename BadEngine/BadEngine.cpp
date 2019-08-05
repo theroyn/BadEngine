@@ -292,7 +292,7 @@ void gl_cbs::mouse_drag_cb(GLFWwindow * /** Ignore */, double xpos, double ypos)
 void gl_cbs::mouse_scroll_cb(GLFWwindow * /** Ignore */, double /** Ignore */, double y_off)
 {
   if (p_camera)
-    p_camera->zoom(y_off);
+    p_camera->zoom((float)y_off);
 }
 
 /** ========================================================================= */

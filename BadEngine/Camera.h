@@ -23,21 +23,21 @@ public:
   void set_cursor(double x, double y);
   void process_keyboard_input();
   void reset_zoom();
-  void zoom(double y_off);
+  void zoom(float y_off);
   void update_time_deltas();
 
 private:
   float get_fov() const;
-  void increase_pitch(double pitch);
-  void increase_yaw(double yaw);
-  void offset_angles(double xoff, double yoff);
+  void increase_pitch(float pitch);
+  void increase_yaw(float yaw);
+  void offset_angles(float xoff, float yoff);
   void step_forward(int dir);
   void step_right(int dir);
   glm::mat4 get_lookat() const;
 
 private:
-  double pitch_, yaw_;
-  double fov_;
+  float pitch_, yaw_;
+  float fov_;
   float spin_speed_, translation_speed_, zoom_speed_;
   const float zoom_speed_base_, translation_speed_base_, spin_speed_base_;
   float last_frame_ = 0.f, delta_time_ = 0.f;

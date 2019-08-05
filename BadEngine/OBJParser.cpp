@@ -141,11 +141,11 @@ void OBJParser::process()
   unsigned int faces_n = face_vertices_indices_.size();
   indices_.reserve(faces_n * 3);
   //for each face
-  for (int i = 0; i < faces_n; ++i)
+  for (unsigned int i = 0; i < faces_n; ++i)
   {
     auto face = face_indices_[i];
     // for each vertex in face
-    for (int j = 0; j < face.size(); ++j)
+    for (unsigned int j = 0; j < face.size(); ++j)
     {
       auto vind = face[j].first;
       auto nind = face[j].second;
