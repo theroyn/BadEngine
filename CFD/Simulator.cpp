@@ -2,7 +2,7 @@
 
 #include <stdlib.h>     /* srand, rand */
 #include <time.h>       /* time */
-#include <gtx/norm.hpp>
+#include <glm/gtx/norm.hpp>
 
 
 Simulator::Simulator(unsigned int spheres_n) : sphere_coll_alg_(sphere_coll_alg::grid),
@@ -75,7 +75,7 @@ void Simulator::init()
   engine_.set_sphere_radius(sphere_rad_);
   engine_.init();
   
-  std::vector<int> spheres_indices;
+  std::vector<size_t> spheres_indices;
   glm::vec3 dims = col_solver_->dims();
   float w = dims.x / 2.f;
   float h = dims.y / 2.f;
@@ -90,7 +90,7 @@ void Simulator::init()
       spheres_indices.push_back(engine_.add_sphere(get_rand(-w, w), get_rand(-h, h), get_rand(-d, d)));
   }
 
-  for (int ind : spheres_indices)
+  for (size_t ind : spheres_indices)
   {
     Sphere *s = engine_.get_sphere(ind);
     s->vel.x = get_rand(-.2f, .2f);

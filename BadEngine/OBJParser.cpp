@@ -138,14 +138,14 @@ void OBJParser::process()
 {
   final_vertices_n_normals_.resize(vertices_.size() * VERTEX_SIZE);
   std::vector<bool> processed(vertices_.size(), false);
-  unsigned int faces_n = face_vertices_indices_.size();
+  size_t faces_n = face_vertices_indices_.size();
   indices_.reserve(faces_n * 3);
   //for each face
-  for (unsigned int i = 0; i < faces_n; ++i)
+  for (size_t i = 0; i < faces_n; ++i)
   {
     auto face = face_indices_[i];
     // for each vertex in face
-    for (unsigned int j = 0; j < face.size(); ++j)
+    for (size_t j = 0; j < face.size(); ++j)
     {
       auto vind = face[j].first;
       auto nind = face[j].second;

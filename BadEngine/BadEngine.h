@@ -34,13 +34,13 @@ public:
   std::string get_message() const { return msg_; }
 
 public:
-  Sphere *get_sphere(int id) const;
+  Sphere *get_sphere(size_t id) const;
   void    set_sphere_radius(float rad) { sphere_rad_ = rad; }
   float   get_sphere_radius(float rad) const { return sphere_rad_; }
   void    set_sphere_pos(int id, float x, float y, float z);
   void    set_sphere_velocity(int id, float x, float y, float z);
   void    set_sphere_acc(int id, float x, float y, float z);
-  int     add_sphere(float x, float y, float z);
+  size_t  add_sphere(float x, float y, float z);
   void    set_world_dims(glm::vec3 dims);
 
 private:

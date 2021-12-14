@@ -22,33 +22,6 @@ namespace gl_cbs
 
 void framebuffer_size_cb(GLFWwindow* window, int width, int height);
 
-
-//#define APPLICATION_MODE
-#ifdef APPLICATION_MODE
-int main()
-{
-  BadEngine engine;
-
-  engine.init();
-  int status = R_SUCCESS;
-  std::string msg = "";
-
-  if (engine)
-  {
-    engine.run();
-  }
-  else
-  {
-    status = engine.get_status();
-    msg = engine.get_message();
-  }
-
-  return utility::r_exit(status, msg);
-}
-
-#endif // APPLICATION_MODE
-
-
 void framebuffer_size_cb(GLFWwindow* window, int width, int height)
 {
   // make sure the viewport matches the new window dimensions; note that width and 
@@ -239,7 +212,7 @@ void BadEngine::draw()
                                            sphere->pos.z));
     model_trans = glm::scale(model_trans, glm::vec3(sphere_rad_));
     sphere_shader_programme_.set_mat4("model", model_trans);
-    glDrawElements(GL_TRIANGLES, sphere_indices_.size(), GL_UNSIGNED_INT, NULL);
+    glDrawElements(GL_TRIANGLES, (GLsizei)sphere_indices_.size(), GL_UNSIGNED_INT, NULL);
   }
 
   box_shader_programme_.use();
@@ -313,14 +286,14 @@ void BadEngine::demo_add_spheres()
   add_sphere(-1.f, 2.f, -.8f);
 }
 
-int BadEngine::add_sphere(float x, float y, float z)
+size_t BadEngine::add_sphere(float x, float y, float z)
 {
   spheres_.emplace_back(new Sphere(x, y, z, sphere_rad_));
 
   return spheres_.size() - 1;
 }
 
-Sphere *BadEngine::get_sphere(int id) const
+Sphere *BadEngine::get_sphere(size_t id) const
 {
   return spheres_[id];
 }
@@ -345,3 +318,28 @@ void BadEngine::set_sphere_acc(int id, float x, float y, float z)
   spheres_[id]->acc.y = y;
   spheres_[id]->acc.z = z;
 }
+
+//#define APPLICATION_MODE
+#ifdef APPLICATION_MODE
+int main()
+{
+  BadEngine engine;
+
+  engine.init();
+  int status = R_SUCCESS;
+  std::string msg = "";
+
+  if (engine)
+  {
+    engine.run();
+  }
+  else
+  {
+    status = engine.get_status();
+    msg = engine.get_message();
+  }
+
+  return utility::r_exit(status, msg);
+}
+
+#endif // APPLICATION_MODE

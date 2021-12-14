@@ -1,6 +1,6 @@
 #include "CollisionSolver.h"
 
-#include <gtx/norm.hpp>
+#include <glm/gtx/norm.hpp>
 #include <tbb/parallel_for.h>
 
 /*******************************************************************************
