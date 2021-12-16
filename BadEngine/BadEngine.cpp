@@ -20,11 +20,11 @@ namespace gl_cbs
 
 #define VMSG_TO_STR(msg) &((msg)[0])
 
-void framebuffer_size_cb(GLFWwindow* window, int width, int height);
+void framebuffer_size_cb(GLFWwindow *window, int width, int height);
 
-void framebuffer_size_cb(GLFWwindow* window, int width, int height)
+void framebuffer_size_cb(GLFWwindow *window, int width, int height)
 {
-  // make sure the viewport matches the new window dimensions; note that width and 
+  // make sure the viewport matches the new window dimensions; note that width and
   // height will be significantly larger than specified on retina displays.
   glViewport(0, 0, width, height);
 }
@@ -32,13 +32,13 @@ void framebuffer_size_cb(GLFWwindow* window, int width, int height)
 BadEngine::BadEngine() : status_(R_SUCCESS),
                          msg_(""),
                          cam_(nullptr),
-                         sphere_vbos_ { 0 },
-                         sphere_vao_  { 0 },
-                         sphere_rad_  { .2f },
+                         sphere_vbos_{ 0 },
+                         sphere_vao_{ 0 },
+                         sphere_rad_{ .2f },
                          //sphere_rad_ { .001f, .001f, .001f},
-                         box_vbos_ { 0 },
-                         box_vao_  { 0 },
-                         box_scale_ { 1.f, 1.f, 1.f}
+                         box_vbos_{ 0 },
+                         box_vao_{ 0 },
+                         box_scale_{ 1.f, 1.f, 1.f }
 
 {
 }
@@ -60,8 +60,8 @@ void BadEngine::init()
 {
   if (glfwInit() == GL_TRUE)
   {
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     window_ = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Hello Texture", NULL, NULL);
@@ -75,11 +75,12 @@ void BadEngine::init()
       glewExperimental = GL_TRUE;
       int res = glewInit();
 
-      const GLubyte* renderer = glGetString(GL_RENDERER);
-      const GLubyte* version = glGetString(GL_VERSION);
+      const GLubyte *renderer = glGetString(GL_RENDERER);
+      const GLubyte *version = glGetString(GL_VERSION);
 
       std::stringstream inf;
-      inf << "Renderer:" << renderer << std::endl << "OpenGL version supported:" << version << std::endl;
+      inf << "Renderer:" << renderer << std::endl
+          << "OpenGL version supported:" << version << std::endl;
       utility::dbg_print(inf.str());
 
       glm::vec3 camera_pos(2.f, 2.f, 10.f);
@@ -88,11 +89,11 @@ void BadEngine::init()
 
       cam_ = new Camera(window_, camera_pos, camera_front, world_up);
       gl_cbs::p_camera = cam_;
-      
+
       //parser_.parse("TriangulatedSphere.obj");
       parser_.parse("SphereRad1.obj");
       //demo_add_spheres();
-     // parser_.parse("cube.obj");
+      // parser_.parse("cube.obj");
 
       glEnable(GL_DEPTH_TEST);
       glClearColor(.7f, .8f, .5f, 1.f);
@@ -121,8 +122,8 @@ void BadEngine::init()
                    &sphere_indices_[0],
                    GL_STATIC_DRAW);
 
-      glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), reinterpret_cast< void * >(0));
-      glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), reinterpret_cast< void * >(3 * sizeof(GLfloat)));
+      glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), reinterpret_cast<void *>(0));
+      glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), reinterpret_cast<void *>(3 * sizeof(GLfloat)));
 
       glEnableVertexAttribArray(0);
       glEnableVertexAttribArray(1);
@@ -154,7 +155,7 @@ void BadEngine::init()
                      normalized_cube_indices,
                      GL_STATIC_DRAW);
 
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), reinterpret_cast< void * >(0));
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), reinterpret_cast<void *>(0));
 
         glEnableVertexAttribArray(0);
 
@@ -179,7 +180,6 @@ void BadEngine::init()
     status_ = R_FAILURE;
     msg_ = "Cannot initiate opengl.";
   }
-
 }
 
 void BadEngine::set_world_dims(glm::vec3 dims)
@@ -205,7 +205,7 @@ void BadEngine::draw()
 
   for (Sphere *sphere : spheres_)
   {
-    glm::mat4 model_trans;
+    glm::mat4 model_trans(1.f);
     model_trans = glm::translate(model_trans,
                                  glm::vec3(sphere->pos.x,
                                            sphere->pos.y,
@@ -220,7 +220,7 @@ void BadEngine::draw()
 
   box_shader_programme_.set_mat4("view", view_trans);
   box_shader_programme_.set_mat4("projection", projection_trans);
-  glm::mat4 model_trans;
+  glm::mat4 model_trans(1.f);
   model_trans = glm::translate(model_trans,
                                glm::vec3(box_.pos.x,
                                          box_.pos.y,
@@ -251,7 +251,7 @@ void BadEngine::run()
   glBindVertexArray(sphere_vao_[0]);
 
   while (!loop_done())
-  {    
+  {
     draw();
   }
 }
