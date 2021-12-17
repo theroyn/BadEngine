@@ -2,6 +2,7 @@
 
 #include "gl_incs.h"
 #include <vector>
+#include <map>
 #include "BadEngine.h"
 #include "Sphere.h"
 #include "CollisionSolver.h"
@@ -14,7 +15,8 @@ public:
   ~Simulator();
 
 public:
-  void add_global_force(glm::vec3 f);
+  void add_global_force(const std::string& name, glm::vec3 f);
+  void remove_global_force(const std::string& name);
 
 public:
   void run();
@@ -26,13 +28,16 @@ private:
   void handle_sphere_collisions_naive_alg();
 
 private:
+  void key_callback(int key, int scancode, int action, int mods);
+
+private:
   float h_, dampening_;
   const float base_h_;
   unsigned int spheres_n_;
   float sphere_rad_;
   float last_time_;
   BadEngine engine_;
-  std::vector<glm::vec3> g_forces_;
+  std::map<std::string, glm::vec3> g_forces_; // named forces
   std::vector<Sphere *> spheres_;
   CollisionSolver *col_solver_;
   const sphere_coll_alg sphere_coll_alg_;

@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <functional>
 
 #include "gl_incs.h"
 
@@ -29,16 +30,17 @@ void framebuffer_size_cb(GLFWwindow *window, int width, int height)
   glViewport(0, 0, width, height);
 }
 
-BadEngine::BadEngine() : status_(R_SUCCESS),
-                         msg_(""),
-                         cam_(nullptr),
-                         sphere_vbos_{ 0 },
-                         sphere_vao_{ 0 },
-                         sphere_rad_{ .2f },
-                         //sphere_rad_ { .001f, .001f, .001f},
-                         box_vbos_{ 0 },
-                         box_vao_{ 0 },
-                         box_scale_{ 1.f, 1.f, 1.f }
+BadEngine::BadEngine(std::function<void(int, int, int, int)> logic_key_handler_cb) : status_(R_SUCCESS),
+                                                                                     msg_(""),
+                                                                                     cam_(nullptr),
+                                                                                     sphere_vbos_{ 0 },
+                                                                                     sphere_vao_{ 0 },
+                                                                                     sphere_rad_{ .2f },
+                                                                                     //sphere_rad_ { .001f, .001f, .001f},
+                                                                                     box_vbos_{ 0 },
+                                                                                     box_vao_{ 0 },
+                                                                                     box_scale_{ 1.f, 1.f, 1.f },
+                                                                                     logic_key_handler_cb_(logic_key_handler_cb)
 
 {
 }
@@ -64,7 +66,7 @@ void BadEngine::init()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    window_ = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Hello Texture", NULL, NULL);
+    window_ = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Hello Texture", glfwGetPrimaryMonitor(), NULL);
 
     if (window_ != NULL)
     {
@@ -167,6 +169,8 @@ void BadEngine::init()
           msg_ = VMSG_TO_STR(msgv);
           status_ = box_shader_programme_.get_error() ? R_FAILURE : R_SUCCESS;
         }
+        glfwSetWindowUserPointer(window_, this);
+        glfwSetKeyCallback(window_, key_callback);
       }
     }
     else
@@ -179,6 +183,23 @@ void BadEngine::init()
   {
     status_ = R_FAILURE;
     msg_ = "Cannot initiate opengl.";
+  }
+}
+
+void BadEngine::key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
+{
+  BadEngine *me = static_cast<BadEngine *>(glfwGetWindowUserPointer(window));
+
+  switch (key)
+  {
+  case GLFW_KEY_ESCAPE:
+  case GLFW_KEY_ENTER:
+  {
+    glfwSetWindowShouldClose(window, GL_TRUE);
+  }
+  break;
+  default:
+    me->logic_key_handler_cb_(key, scancode, action, mods);
   }
 }
 
@@ -272,10 +293,6 @@ void gl_cbs::mouse_scroll_cb(GLFWwindow * /** Ignore */, double /** Ignore */, d
 void BadEngine::process_input()
 /** ========================================================================= */
 {
-  if (GLFW_PRESS == glfwGetKey(window_, GLFW_KEY_ESCAPE) ||
-      GLFW_PRESS == glfwGetKey(window_, GLFW_KEY_ENTER))
-    glfwSetWindowShouldClose(window_, GL_TRUE);
-
   cam_->process_keyboard_input();
 }
 

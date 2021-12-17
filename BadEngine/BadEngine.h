@@ -6,6 +6,7 @@
 #include "OBJParser.h"
 #include "Shader.h"
 #include "Sphere.h"
+#include <functional>
 
 
 struct SimpleBox
@@ -17,7 +18,7 @@ struct SimpleBox
 class BadEngine
 {
 public:
-  BadEngine();
+  BadEngine(std::function<void(int,int,int,int)> logic_key_handler_cb);
   ~BadEngine();
 
 public:
@@ -48,6 +49,9 @@ private:
   void process_input();
 
 private:
+  static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
+
+private:
   GLFWwindow *window_;
   int status_;
   std::string msg_;
@@ -68,4 +72,5 @@ private:
   std::vector<float> box_data_;
   glm::vec3 box_scale_;
   SimpleBox box_;
+  std::function<void(int, int, int, int)> logic_key_handler_cb_;
 };

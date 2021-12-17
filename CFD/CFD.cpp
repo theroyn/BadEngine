@@ -2,10 +2,9 @@
 //#include <BadEngine.h>
 #include "Simulator.h"
 
-
 int main(int argc, char *argv[])
 {
-  unsigned int spheres_n = 3000;
+  unsigned int spheres_n = 9000;
 
   if (argc == 2)
   {
