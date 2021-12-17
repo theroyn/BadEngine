@@ -3,6 +3,7 @@
 #include <string>
 #include "Camera.h"
 #include "const.h"
+#include "FileCopier.h"
 #include "OBJParser.h"
 #include "Shader.h"
 #include "Sphere.h"
@@ -73,4 +74,7 @@ private:
   glm::vec3 box_scale_;
   SimpleBox box_;
   std::function<void(int, int, int, int)> logic_key_handler_cb_;
+  const GLuint screen_width_ = 1920;
+  const GLuint screen_height_ = 1080;
+  FileCopier file_copier_;
 };

@@ -114,7 +114,7 @@ void Simulator::init()
     spheres_.push_back(s);
   }
 
-  add_global_force("gravity", glm::vec3(0.f, -.1f, 0.f));
+  add_global_force("gravity", glm::vec3(0.f, -.4f, 0.f));
 
   engine_.set_world_dims(col_solver_->dims());
 }

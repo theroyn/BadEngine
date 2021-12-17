@@ -7,9 +7,9 @@ struct Sphere
   Sphere(float x, float y, float z, float rad) : pos(x, y, z),
                                                  vel(0.f), 
                                                  acc(0.f), 
-                                                 mass(3.f), 
+                                                 mass(7.f), 
                                                  rad(rad),
-                                                 bounciness(.8f) {}
+                                                 bounciness(.2f) {}
 
   glm::vec3 pos;
   glm::vec3 vel;

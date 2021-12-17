@@ -11,13 +11,16 @@ void SphereGridMap::update_map(const std::vector<Sphere *> &spheres)
   }
 }
 
-void SphereGridMap::get_by_coords(std::list<Sphere *> &vec, const glm::uvec3 &coords) const
+void SphereGridMap::get_neighbours_by_coords(const Sphere *s, std::list<Sphere *> &vec, const glm::uvec3 &coords) const
 {
   auto r = map_.equal_range(get_flat_idx(coords));
 
   for (auto it = r.first; it != r.second; ++it)
   {
-    vec.push_back((*it).second);
+    if ((*it).second != s)
+    {
+      vec.push_back((*it).second);
+    }
   }
 }
 
@@ -47,7 +50,7 @@ void SphereGridMap::get_neighbours(const Sphere *s, std::list<Sphere *> &res) co
            z <= z_sup;
            ++z)
       {
-        get_by_coords(res, glm::uvec3(x, y, z));
+        get_neighbours_by_coords(s, res, glm::uvec3(x, y, z));
       }
     }
   }

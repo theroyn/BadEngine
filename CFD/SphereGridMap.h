@@ -28,7 +28,7 @@ private:
   glm::uvec3 get_3d_idx(const glm::vec3 &pos) const;
   size_t get_flat_idx(size_t a, size_t b, size_t c) const;
   size_t get_flat_idx(const glm::uvec3 &coords) const;
-  void get_by_coords(std::list<Sphere *> &vec, const glm::uvec3 &coords) const;
+  void get_neighbours_by_coords(const Sphere *s, std::list<Sphere *> &vec, const glm::uvec3 &coords) const;
 
 private:
   std::unordered_multimap<size_t, Sphere *> map_;

@@ -4,7 +4,7 @@
 
 int main(int argc, char *argv[])
 {
-  unsigned int spheres_n = 9000;
+  unsigned int spheres_n = 1000;
 
   if (argc == 2)
   {
@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
       spheres_n = n;
   }
 
-  Simulator sim = Simulator(spheres_n);
+  Simulator sim(spheres_n);
 
   sim.init();
 

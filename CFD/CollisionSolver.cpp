@@ -25,15 +25,20 @@ void CollisionSolver::solve_collided_spheres(Sphere *s1,
   }
 }
 
-void
-CollisionSolver::handle_world_collision_coord(Sphere *s,
-                                             float glm::vec3::*coord)
+void CollisionSolver::handle_world_collision_coord(Sphere *s,
+                                                   float glm::vec3::*coord)
 {
   if (s->pos.*coord - s->rad <= center_.*coord - dims_.*coord / 2 && s->vel.*coord < 0)
+  {
     s->vel.*coord *= -s->bounciness;
+    s->pos.*coord = center_.*coord - dims_.*coord / 2 + s->rad;
+  }
 
   if (s->pos.*coord + s->rad >= center_.*coord + dims_.*coord / 2 && s->vel.*coord > 0)
+  {
     s->vel.*coord *= -s->bounciness;
+    s->pos.*coord = center_.*coord + dims_.*coord / 2 - s->rad;
+  }
 }
 
 void CollisionSolver::handle_world_collision(Sphere *s)
@@ -88,11 +93,18 @@ void GridRangeSolver::operator() (const tbb::blocked_range<size_t>& r) const
         s1_inside = true;
         continue;
       }
+      
+      if (solver_->set_collided(s1, s2))
+      {
+        continue;
+      }
 
       if (glm::l2Norm(s1->pos, s2->pos) <= s1->rad + s2->rad)
         solver_->solve_collided_spheres(s1, s2);
     }
-    assert(s1_inside);
+
+    // DUDU investigate why this throws
+    //assert(s1_inside);
 
     solver_->handle_world_collision(s1);
   }
@@ -104,8 +116,42 @@ void GridCollisionSolver::handle_collisions()
 {
   map_.update_map(spheres_);
 
+  colliders_.clear();
+
   tbb::parallel_for(tbb::blocked_range<size_t>(0, spheres_.size()), GridRangeSolver(spheres_, map_, this));
 
+}
+
+bool GridCollisionSolver::set_collided(Sphere *s1, Sphere *s2)
+{
+  bool result = false;
+  std::pair<Sphere *, Sphere *> p1 = std::make_pair(s1, s2);
+  std::pair<Sphere *, Sphere *> p2 = std::make_pair(s2, s1);
+
+  {
+    std::shared_lock<std::shared_mutex> read_lock(colliders_mutex_);
+    if (colliders_.find(p1) != colliders_.end() || colliders_.find(p2) != colliders_.end())
+    {
+      result = true;
+    }
+  }
+  if (!result)
+  {
+    std::lock_guard<std::shared_mutex> write_lock(colliders_mutex_);
+    // double check since the (s2,s1) combination might have gotten through the reader lock
+    // at the same time
+    if (colliders_.find(p1) != colliders_.end() || colliders_.find(p2) != colliders_.end())
+    {
+      result = true;
+    }
+    else
+    {
+      colliders_.insert(p1);
+    }
+  }
+
+  // whether already collided
+  return result;
 }
 
 /*******************************************************************************

@@ -9,8 +9,6 @@
 #include "BadEngine.h"
 #include "coords.h"
 #include "Shader.h"
-const GLuint SCR_WIDTH = 800;
-const GLuint SCR_HEIGHT = 600;
 
 namespace gl_cbs
 {
@@ -66,7 +64,7 @@ void BadEngine::init()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    window_ = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Hello Texture", glfwGetPrimaryMonitor(), NULL);
+    window_ = glfwCreateWindow(screen_width_, screen_height_, "Hello Texture", NULL, NULL);
 
     if (window_ != NULL)
     {
@@ -171,6 +169,9 @@ void BadEngine::init()
         }
         glfwSetWindowUserPointer(window_, this);
         glfwSetKeyCallback(window_, key_callback);
+
+        // fix alignment for subsequent calls to glReadPixels().
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
       }
     }
     else
@@ -259,6 +260,17 @@ void BadEngine::draw()
 
   cam_->update_time_deltas();
   process_input();
+
+#if COPY_WINDOW
+
+  GLsizei buffer_size = screen_width_ * screen_height_ * 3;
+  char *buffer = (char *)malloc(buffer_size);
+
+  glReadPixels(0, 0, screen_width_, screen_height_, GL_RGB, GL_UNSIGNED_BYTE, (GLvoid *)buffer);
+
+  file_copier_.Push(buffer, buffer_size);
+
+#endif
 }
 
 bool BadEngine::loop_done() const
