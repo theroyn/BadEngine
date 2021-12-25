@@ -1,4 +1,6 @@
 # CFDRenderer
 
-Demo:
-[![Everything Is AWESOME](https://yt-embed.herokuapp.com/embed?v=YX5yoApjI3M)](https://www.youtube.com/watch?v=YX5yoApjI3M "Everything Is AWESOME")
+Youtube Demo:
+
+[<img src="https://img.youtube.com/vi/XBVLrm38_fk/maxresdefault.jpg" width="50%">](https://youtu.be/XBVLrm38_fk)
+
