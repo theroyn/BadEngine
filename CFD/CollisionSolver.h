@@ -31,12 +31,14 @@ public: // Formerly ContainingBox
 
 protected:
   void solve_collided_spheres(Sphere *s1,
-                           Sphere *s2,
-                           float bumpiness = .9f);
+                              Sphere *s2,
+                              // 0 = inelastic, 1 = perfectly elastic
+                              float elasticity = .9f);
   void handle_world_collision(Sphere *s);
+  void handle_world_collision2(Sphere *s);
 
 private:
-  void handle_world_collision_coord(Sphere *s,
+  void handle_world_collision2_coord(Sphere *s,
                                     float glm::vec3::* coord);
 
 protected:
@@ -71,6 +73,7 @@ class GridCollisionSolver : public CollisionSolver
 {
   friend class GridRangeSolver;
 public:
+  // todo: execution order is correct atm(CollisionSolver before map_), but do this better
   GridCollisionSolver(std::vector<Sphere *> &spheres, float rad) : CollisionSolver(spheres, rad),
                                                         map_(rad_, dims())
   { }
@@ -79,11 +82,7 @@ public:
   virtual void handle_collisions();
 
 private:
-  bool set_collided(Sphere *s1, Sphere *s2);
-
-private:
   SphereGridMap map_;
-  std::unordered_set<std::pair<Sphere *, Sphere *>, pair_hash> colliders_;
   std::shared_mutex colliders_mutex_;
 };
 

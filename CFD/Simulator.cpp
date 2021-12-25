@@ -7,9 +7,9 @@
 
 
 Simulator::Simulator(unsigned int spheres_n) : sphere_coll_alg_(sphere_coll_alg::grid),
-                                               h_(.08f),
+                                               h_(.03f),
                                                base_h_(h_),
-                                               dampening_(.003f),
+                                               dampening_(.009f),
                                                spheres_n_(spheres_n),
                                                sphere_rad_(.1f),
                                                engine_(std::bind(&Simulator::key_callback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4))
@@ -59,11 +59,11 @@ void Simulator::integrate()
   float delta = curr_time - last_time_;
   last_time_ = curr_time;
 
-  h_ = base_h_ * 50.f * delta;
+  h_ = base_h_ * 133.33f * delta;
 
   for (auto sphere : spheres_)
   {
-    sphere->acc = std::move(glm::vec3(0.f));
+    sphere->acc = glm::vec3(0.f);
 
     for (auto f : g_forces_)
     {
@@ -73,10 +73,26 @@ void Simulator::integrate()
     // internal forces calculations
     glm::vec3 dampening_force = -dampening_ * sphere->vel;
     sphere->acc += dampening_force / sphere->mass;
+    static Sphere *lowSphere = nullptr;
+    static size_t cnt = 0;
 
-    glm::vec3 vel = sphere->vel + h_ * sphere->acc;
+    if (!lowSphere && sphere->pos.y < -2.5f)
+    {
+      lowSphere = sphere;
+    }
+    if (lowSphere == sphere && cnt++ % 100 == 0)
+    {
+      std::cout <<"h_:"<<h_<< ", prev pos (" << lowSphere->pos.x << "," << lowSphere->pos.y << "," << lowSphere->pos.z << ")\n";
+    }
+    // pos integration before velocity, since integration is relative to values from previous step.
     sphere->pos += h_ * sphere->vel;
-    sphere->vel = vel;
+    if (lowSphere == sphere && cnt % 100 == 0)
+    {
+      std::cout << "curr pos (" << lowSphere->pos.x << "," << lowSphere->pos.y << "," << lowSphere->pos.z << ")\n\n";
+    }
+    sphere->vel += h_ * sphere->acc;
+
+    sphere->colliders_.clear();
   }
 }
 static float get_rand(float low=-.5f, float high = .5f)
@@ -114,11 +130,30 @@ void Simulator::init()
     spheres_.push_back(s);
   }
 
-  add_global_force("gravity", glm::vec3(0.f, -.4f, 0.f));
+  add_global_force("gravity", glm::vec3(0.f, -.9f, 0.f));
 
   engine_.set_world_dims(col_solver_->dims());
 }
 
+namespace cr = std::chrono;
+static void print_fps()
+{
+  static size_t frame_cnt = 0;
+  frame_cnt++;
+  static auto last_print = cr::system_clock::now().time_since_epoch();
+  static auto previous = cr::system_clock::now().time_since_epoch();
+  auto current = cr::system_clock::now().time_since_epoch();
+  cr::microseconds diff_from_last_print = cr::duration_cast<cr::microseconds>(current - last_print);
+  if (diff_from_last_print >= cr::seconds(1))
+  {
+    last_print = current;
+
+    cr::microseconds diff_from_last_frame = cr::duration_cast<cr::microseconds>(current - previous);
+    std::cout << "frame num:" << frame_cnt << ", Time to process last frame (milliseconds): " << diff_from_last_frame.count() / 1000.0
+              << " FPS: " << 1.0 / ((double)diff_from_last_frame.count() / 1000'000.0) << "\n";
+  }
+  previous = current;
+}
 
 void Simulator::run()
 {
@@ -129,6 +164,7 @@ void Simulator::run()
     handle_collisions();
 
     integrate();
+    print_fps();
   }
 }
 
@@ -153,7 +189,7 @@ void Simulator::key_callback(int key, int scancode, int action, int mods)
     }
     else if (action == GLFW_REPEAT)
     {
-      std::cout << "P repeat!!!\n";
+      // ignored
     }
     else
     {

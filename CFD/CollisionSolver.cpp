@@ -2,50 +2,98 @@
 
 #include <glm/gtx/norm.hpp>
 #include <tbb/parallel_for.h>
+#include <thread>
+#include <mutex>
 
 /*******************************************************************************
  * class CollisionSolver Implementation
  */
 void CollisionSolver::solve_collided_spheres(Sphere *s1,
-                                          Sphere *s2,
-                                          float bumpiness)
+                                             Sphere *s2,
+                                             float elasticity)
 {
-  glm::vec3 n = glm::normalize(s1->pos - s2->pos);
-  glm::vec3 vrel = s1->vel - s2->vel;
-  float verl_scl = glm::dot(vrel, n);
+  bool should_update = false;
 
-  if (verl_scl < 0)
   {
-    float imp_nom = -1 * (1 + bumpiness) * verl_scl;
-    float imp_denom = (1 / s1->mass) + (1 / s2->mass);
-    float imp = imp_nom / imp_denom;
+    std::scoped_lock lock(s1->in_collision_m_, s2->in_collision_m_);
 
-    s1->vel += (imp / s1->mass) * n;
-    s2->vel -= (imp / s2->mass) * n;
+    s1->colliders_.insert(s2);
+    s2->colliders_.insert(s1);
+    should_update = true;
+  }
+
+  if (should_update)
+  {
+    glm::vec3 n = glm::normalize(s1->pos - s2->pos);
+    glm::vec3 vrel = s1->vel - s2->vel;
+    float verl_scl = glm::dot(vrel, n);
+
+    if (verl_scl < 0)
+    {
+      float imp_nom = -1 * (1 + elasticity) * verl_scl;
+      float imp_denom = (1 / s1->mass) + (1 / s2->mass);
+      float imp = imp_nom / imp_denom;
+
+      s1->vel += (imp / s1->mass) * n;
+      s2->vel -= (imp / s2->mass) * n;
+    }
   }
 }
 
-void CollisionSolver::handle_world_collision_coord(Sphere *s,
+void CollisionSolver::handle_world_collision2_coord(Sphere *s,
                                                    float glm::vec3::*coord)
 {
   if (s->pos.*coord - s->rad <= center_.*coord - dims_.*coord / 2 && s->vel.*coord < 0)
   {
-    s->vel.*coord *= -s->bounciness;
-    s->pos.*coord = center_.*coord - dims_.*coord / 2 + s->rad;
+    s->vel.*coord *= -s->elasticity;
+    //s->pos.*coord = center_.*coord - dims_.*coord / 2 + s->rad;
   }
 
   if (s->pos.*coord + s->rad >= center_.*coord + dims_.*coord / 2 && s->vel.*coord > 0)
   {
-    s->vel.*coord *= -s->bounciness;
-    s->pos.*coord = center_.*coord + dims_.*coord / 2 - s->rad;
+    s->vel.*coord *= -s->elasticity;
+    //s->pos.*coord = center_.*coord + dims_.*coord / 2 - s->rad;
   }
+}
+
+void CollisionSolver::handle_world_collision2(Sphere *s)
+{
+  handle_world_collision2_coord(s, &glm::vec3::x);
+  handle_world_collision2_coord(s, &glm::vec3::y);
+  handle_world_collision2_coord(s, &glm::vec3::z);
 }
 
 void CollisionSolver::handle_world_collision(Sphere *s)
 {
-  handle_world_collision_coord(s, &glm::vec3::x);
-  handle_world_collision_coord(s, &glm::vec3::y);
-  handle_world_collision_coord(s, &glm::vec3::z);
+  // todo: find a way not to lock here
+  std::scoped_lock lock(s->in_collision_m_);
+
+  glm::vec3 n(0.f);
+  for (int i = 0; i < 3; ++i)
+  {
+    if (s->pos[i] + s->rad >= center_[i] + dims_[i] * .5f)
+    {
+      n[i] = -1.f;
+    }
+    else if (s->pos[i] - s->rad <= center_[i] - dims_[i] * .5f)
+    {
+      n[i] = +1.f;
+    }
+  }
+
+  n = glm::normalize(n);
+
+  glm::vec3 vrel = s->vel;
+  float verl_scl = glm::dot(vrel, n);
+
+  if (verl_scl < 0)
+  {
+    float imp_nom = -1 * (1 + s->elasticity) * verl_scl;
+    float imp_denom = (1 / s->mass) + 0.f /** wall mass treated as infinite */;
+    float imp = imp_nom / imp_denom;
+
+    s->vel += (imp / s->mass) * n;
+  }
 }
 
 /*******************************************************************************
@@ -53,10 +101,10 @@ void CollisionSolver::handle_world_collision(Sphere *s)
  */
 void NaiveCollisionSolver::handle_collisions()
 {
-  for (auto sit = spheres_.begin(); sit != spheres_.end(); ++sit)
+  for (auto sit1 = spheres_.begin(); sit1 != spheres_.end(); ++sit1)
   {
-    Sphere *s1 = *sit;
-    for (auto sit2 = sit + 1; sit2 != spheres_.end(); ++sit2)
+    Sphere *s1 = *sit1;
+    for (auto sit2 = sit1 + 1; sit2 != spheres_.end(); ++sit2)
     {
       Sphere *s2 = *sit2;
 
@@ -93,11 +141,6 @@ void GridRangeSolver::operator() (const tbb::blocked_range<size_t>& r) const
         s1_inside = true;
         continue;
       }
-      
-      if (solver_->set_collided(s1, s2))
-      {
-        continue;
-      }
 
       if (glm::l2Norm(s1->pos, s2->pos) <= s1->rad + s2->rad)
         solver_->solve_collided_spheres(s1, s2);
@@ -116,42 +159,7 @@ void GridCollisionSolver::handle_collisions()
 {
   map_.update_map(spheres_);
 
-  colliders_.clear();
-
   tbb::parallel_for(tbb::blocked_range<size_t>(0, spheres_.size()), GridRangeSolver(spheres_, map_, this));
-
-}
-
-bool GridCollisionSolver::set_collided(Sphere *s1, Sphere *s2)
-{
-  bool result = false;
-  std::pair<Sphere *, Sphere *> p1 = std::make_pair(s1, s2);
-  std::pair<Sphere *, Sphere *> p2 = std::make_pair(s2, s1);
-
-  {
-    std::shared_lock<std::shared_mutex> read_lock(colliders_mutex_);
-    if (colliders_.find(p1) != colliders_.end() || colliders_.find(p2) != colliders_.end())
-    {
-      result = true;
-    }
-  }
-  if (!result)
-  {
-    std::lock_guard<std::shared_mutex> write_lock(colliders_mutex_);
-    // double check since the (s2,s1) combination might have gotten through the reader lock
-    // at the same time
-    if (colliders_.find(p1) != colliders_.end() || colliders_.find(p2) != colliders_.end())
-    {
-      result = true;
-    }
-    else
-    {
-      colliders_.insert(p1);
-    }
-  }
-
-  // whether already collided
-  return result;
 }
 
 /*******************************************************************************

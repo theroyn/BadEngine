@@ -1,6 +1,8 @@
 #pragma once
 
 #include "gl_incs.h"
+#include <mutex>
+#include <unordered_set>
 
 struct Sphere
 {
@@ -9,12 +11,14 @@ struct Sphere
                                                  acc(0.f), 
                                                  mass(7.f), 
                                                  rad(rad),
-                                                 bounciness(.2f) {}
+                                                 elasticity(.9f) {}
 
   glm::vec3 pos;
   glm::vec3 vel;
   glm::vec3 acc;
   float rad;
-  float bounciness;
+  float elasticity;
   float mass;
+  std::mutex in_collision_m_;
+  std::unordered_set<Sphere *> colliders_;
 };

@@ -4,7 +4,7 @@
 
 int main(int argc, char *argv[])
 {
-  unsigned int spheres_n = 1000;
+  unsigned int spheres_n = 3000;
 
   if (argc == 2)
   {
