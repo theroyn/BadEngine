@@ -3,7 +3,7 @@
 out vec4 frag_colour;
 
 uniform vec3 eye_pos;
-vec3 licht=vec3(1.2, 1.0, 2.0);
+vec3 licht=vec3(1.2, 3.0, 2.0);
 
 in vec3 frag_view_normal;
 in vec4 frag_view_pos;

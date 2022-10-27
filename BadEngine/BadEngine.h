@@ -48,6 +48,8 @@ public:
 private:
   void demo_add_spheres();
   void process_input();
+  void init_sphere_program();
+  void init_cube_program();
 
 private:
   static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);

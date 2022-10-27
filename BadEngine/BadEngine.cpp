@@ -56,135 +56,148 @@ BadEngine::~BadEngine()
   spheres_.erase(spheres_.begin(), spheres_.end());
 }
 
+void BadEngine::init_sphere_program()
+{
+  parser_.parse("SphereRad1.obj");
+
+  sphere_data_ = parser_.get_data();
+  sphere_indices_ = parser_.get_indices();
+
+  glGenVertexArrays(1, sphere_vao_);
+  glBindVertexArray(sphere_vao_[0]);
+
+  glGenBuffers(sizeof(sphere_vbos_) / sizeof(sphere_vbos_[0]),
+               sphere_vbos_);
+  glBindBuffer(GL_ARRAY_BUFFER,
+               sphere_vbos_[0]);
+  glBufferData(GL_ARRAY_BUFFER,
+               sphere_data_.size() * sizeof(sphere_data_[0]),
+               &sphere_data_[0],
+               GL_STATIC_DRAW);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sphere_vbos_[1]);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+               sphere_indices_.size() * sizeof(sphere_indices_[0]),
+               &sphere_indices_[0],
+               GL_STATIC_DRAW);
+
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), reinterpret_cast<void *>(0));
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), reinterpret_cast<void *>(3 * sizeof(GLfloat)));
+
+  glEnableVertexAttribArray(0);
+  glEnableVertexAttribArray(1);
+
+  sphere_shader_programme_ = Shader("base_vs.glsl", "base_fs.glsl");
+
+  if (sphere_shader_programme_.get_error())
+  {
+    auto msgv = sphere_shader_programme_.get_message();
+    msg_ = VMSG_TO_STR(msgv);
+    status_ = sphere_shader_programme_.get_error() ? R_FAILURE : R_SUCCESS;
+  }
+}
+
+void BadEngine::init_cube_program()
+{
+  // load containing box
+  glGenVertexArrays(1, box_vao_);
+  glBindVertexArray(box_vao_[0]);
+
+  glGenBuffers(sizeof(box_vbos_) / sizeof(box_vbos_[0]),
+               box_vbos_);
+  glBindBuffer(GL_ARRAY_BUFFER,
+               box_vbos_[0]);
+  glBufferData(GL_ARRAY_BUFFER,
+               sizeof(normalized_cube_coords),
+               normalized_cube_coords,
+               GL_STATIC_DRAW);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, box_vbos_[1]);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+               sizeof(normalized_cube_indices),
+               normalized_cube_indices,
+               GL_STATIC_DRAW);
+
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), reinterpret_cast<void *>(0));
+
+  glEnableVertexAttribArray(0);
+
+  box_shader_programme_ = Shader("box_vs.glsl", "box_fs.glsl");
+
+  if (box_shader_programme_.get_error())
+  {
+    auto msgv = box_shader_programme_.get_message();
+    msg_ = VMSG_TO_STR(msgv);
+    status_ = box_shader_programme_.get_error() ? R_FAILURE : R_SUCCESS;
+  }
+}
+
 void BadEngine::init()
 {
-  if (glfwInit() == GL_TRUE)
-  {
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    window_ = glfwCreateWindow(screen_width_, screen_height_, "Hello Texture", NULL, NULL);
-
-    if (window_ != NULL)
-    {
-      glfwMakeContextCurrent(window_);
-      glfwSetFramebufferSizeCallback(window_, framebuffer_size_cb);
-
-      // start GLEW extension handler
-      glewExperimental = GL_TRUE;
-      int res = glewInit();
-
-      const GLubyte *renderer = glGetString(GL_RENDERER);
-      const GLubyte *version = glGetString(GL_VERSION);
-
-      std::stringstream inf;
-      inf << "Renderer:" << renderer << std::endl
-          << "OpenGL version supported:" << version << std::endl;
-      utility::dbg_print(inf.str());
-
-      glm::vec3 camera_pos(2.f, 2.f, 10.f);
-      glm::vec3 camera_front(-.3f, -.3f, -1.f);
-      glm::vec3 world_up(0.f, 1.f, 0.f);
-
-      cam_ = new Camera(window_, camera_pos, camera_front, world_up);
-      gl_cbs::p_camera = cam_;
-
-      //parser_.parse("TriangulatedSphere.obj");
-      parser_.parse("SphereRad1.obj");
-      //demo_add_spheres();
-      // parser_.parse("cube.obj");
-
-      glEnable(GL_DEPTH_TEST);
-      glClearColor(.7f, .8f, .5f, 1.f);
-      glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-      glfwSetCursorPosCallback(window_, gl_cbs::mouse_drag_cb);
-      glfwSetScrollCallback(window_, gl_cbs::mouse_scroll_cb);
-
-      glGenVertexArrays(1, sphere_vao_);
-      glBindVertexArray(sphere_vao_[0]);
-
-
-      sphere_data_ = parser_.get_data();
-      sphere_indices_ = parser_.get_indices();
-
-      glGenBuffers(sizeof(sphere_vbos_) / sizeof(sphere_vbos_[0]),
-                   sphere_vbos_);
-      glBindBuffer(GL_ARRAY_BUFFER,
-                   sphere_vbos_[0]);
-      glBufferData(GL_ARRAY_BUFFER,
-                   sphere_data_.size() * sizeof(sphere_data_[0]),
-                   &sphere_data_[0],
-                   GL_STATIC_DRAW);
-      glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sphere_vbos_[1]);
-      glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                   sphere_indices_.size() * sizeof(sphere_indices_[0]),
-                   &sphere_indices_[0],
-                   GL_STATIC_DRAW);
-
-      glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), reinterpret_cast<void *>(0));
-      glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), reinterpret_cast<void *>(3 * sizeof(GLfloat)));
-
-      glEnableVertexAttribArray(0);
-      glEnableVertexAttribArray(1);
-
-      sphere_shader_programme_ = Shader("base_vs.glsl", "base_fs.glsl");
-
-      if (sphere_shader_programme_.get_error())
-      {
-        auto msgv = sphere_shader_programme_.get_message();
-        msg_ = VMSG_TO_STR(msgv);
-        status_ = sphere_shader_programme_.get_error() ? R_FAILURE : R_SUCCESS;
-      }
-      else // load containing box
-      {
-        glGenVertexArrays(1, box_vao_);
-        glBindVertexArray(box_vao_[0]);
-
-        glGenBuffers(sizeof(box_vbos_) / sizeof(box_vbos_[0]),
-                     box_vbos_);
-        glBindBuffer(GL_ARRAY_BUFFER,
-                     box_vbos_[0]);
-        glBufferData(GL_ARRAY_BUFFER,
-                     sizeof(normalized_cube_coords),
-                     normalized_cube_coords,
-                     GL_STATIC_DRAW);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, box_vbos_[1]);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                     sizeof(normalized_cube_indices),
-                     normalized_cube_indices,
-                     GL_STATIC_DRAW);
-
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), reinterpret_cast<void *>(0));
-
-        glEnableVertexAttribArray(0);
-
-        box_shader_programme_ = Shader("box_vs.glsl", "box_fs.glsl");
-
-        if (box_shader_programme_.get_error())
-        {
-          auto msgv = box_shader_programme_.get_message();
-          msg_ = VMSG_TO_STR(msgv);
-          status_ = box_shader_programme_.get_error() ? R_FAILURE : R_SUCCESS;
-        }
-        glfwSetWindowUserPointer(window_, this);
-        glfwSetKeyCallback(window_, key_callback);
-
-        // fix alignment for subsequent calls to glReadPixels().
-        glPixelStorei(GL_PACK_ALIGNMENT, 1);
-      }
-    }
-    else
-    {
-      status_ = R_FAILURE;
-      msg_ = "Cannot create opengl window.";
-    }
-  }
-  else
+  if (glfwInit() == GL_FALSE)
   {
     status_ = R_FAILURE;
     msg_ = "Cannot initiate opengl.";
+    throw std::runtime_error(msg_);
   }
+
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+  window_ = glfwCreateWindow(screen_width_, screen_height_, "Hello Texture", NULL, NULL);
+
+  if (window_ == NULL)
+  {
+    status_ = R_FAILURE;
+    msg_ = "Cannot create opengl window.";
+    throw std::runtime_error(msg_);
+  }
+
+  glfwMakeContextCurrent(window_);
+  glfwSetFramebufferSizeCallback(window_, framebuffer_size_cb);
+
+  // start GLEW extension handler
+  glewExperimental = GL_TRUE;
+  int res = glewInit();
+
+  const GLubyte *renderer = glGetString(GL_RENDERER);
+  const GLubyte *version = glGetString(GL_VERSION);
+
+  std::stringstream inf;
+  inf << "Renderer:" << renderer << std::endl
+      << "OpenGL version supported:" << version << std::endl;
+  utility::dbg_print(inf.str());
+
+  glm::vec3 camera_pos(2.f, 2.f, 10.f);
+  glm::vec3 camera_front(-.3f, -.3f, -1.f);
+  glm::vec3 world_up(0.f, 1.f, 0.f);
+
+  cam_ = new Camera(window_, camera_pos, camera_front, world_up);
+  gl_cbs::p_camera = cam_;
+
+  //parser_.parse("TriangulatedSphere.obj");
+  //demo_add_spheres();
+  // parser_.parse("cube.obj");
+
+  glEnable(GL_DEPTH_TEST);
+  glClearColor(.7f, .8f, .5f, 1.f);
+  // fix alignment for subsequent calls to glReadPixels().
+  glPixelStorei(GL_PACK_ALIGNMENT, 1);
+
+  glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+  glfwSetCursorPosCallback(window_, gl_cbs::mouse_drag_cb);
+  glfwSetScrollCallback(window_, gl_cbs::mouse_scroll_cb);
+  glfwSetWindowUserPointer(window_, this);
+  glfwSetKeyCallback(window_, key_callback);
+
+  init_sphere_program();
+
+  if (status_ != R_SUCCESS)
+  {
+    throw std::runtime_error(msg_);
+  }
+
+  init_cube_program();
+
   if (status_ != R_SUCCESS)
   {
     throw std::runtime_error(msg_);
