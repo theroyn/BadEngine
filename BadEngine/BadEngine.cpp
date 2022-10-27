@@ -185,6 +185,10 @@ void BadEngine::init()
     status_ = R_FAILURE;
     msg_ = "Cannot initiate opengl.";
   }
+  if (status_ != R_SUCCESS)
+  {
+    throw std::runtime_error(msg_);
+  }
 }
 
 void BadEngine::key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
@@ -221,9 +225,11 @@ void BadEngine::draw()
 
   glm::mat4 view_trans = cam_->get_view();
   glm::mat4 projection_trans = cam_->get_projection();
+  glm::vec3 cam_pos = cam_->get_pos();
 
   sphere_shader_programme_.set_mat4("view", view_trans);
   sphere_shader_programme_.set_mat4("projection", projection_trans);
+  sphere_shader_programme_.set_vec3("eye_pos", cam_pos);
 
   for (Sphere *sphere : spheres_)
   {

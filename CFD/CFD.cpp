@@ -4,18 +4,25 @@
 
 int main(int argc, char *argv[])
 {
-  unsigned int spheres_n = 3000;
-
-  if (argc == 2)
+  try
   {
-    int n = atoi(argv[1]);
-    if (n > 0)
-      spheres_n = n;
+    unsigned int spheres_n = 3000;
+
+    if (argc == 2)
+    {
+      int n = atoi(argv[1]);
+      if (n > 0)
+        spheres_n = n;
+    }
+
+    Simulator sim(spheres_n);
+
+    sim.init();
+
+    sim.run();
   }
-
-  Simulator sim(spheres_n);
-
-  sim.init();
-
-  sim.run();
+  catch (const std::exception &error)
+  {
+    std::cerr << error.what();
+  }
 }
