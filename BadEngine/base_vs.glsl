@@ -16,7 +16,6 @@ uniform mat4 projection;
 
 void main()
 {
-
     mat3 normal_matrix=transpose(inverse(mat3(view * model)));
 
     vec4 view_pos=view * model * vec4(pos, 1.0);

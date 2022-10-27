@@ -35,9 +35,9 @@ BadEngine::BadEngine(std::function<void(int, int, int, int)> logic_key_handler_c
                                                                                      sphere_vao_{ 0 },
                                                                                      sphere_rad_{ .2f },
                                                                                      //sphere_rad_ { .001f, .001f, .001f},
-                                                                                     box_vbos_{ 0 },
-                                                                                     box_vao_{ 0 },
-                                                                                     box_scale_{ 1.f, 1.f, 1.f },
+                                                                                     cube_vbos_{ 0 },
+                                                                                     cube_vao_{ 0 },
+                                                                                     cube_scale_{ 1.f, 1.f, 1.f },
                                                                                      logic_key_handler_cb_(logic_key_handler_cb)
 
 {
@@ -98,19 +98,19 @@ void BadEngine::init_sphere_program()
 
 void BadEngine::init_cube_program()
 {
-  // load containing box
-  glGenVertexArrays(1, box_vao_);
-  glBindVertexArray(box_vao_[0]);
+  // load containing cube
+  glGenVertexArrays(1, cube_vao_);
+  glBindVertexArray(cube_vao_[0]);
 
-  glGenBuffers(sizeof(box_vbos_) / sizeof(box_vbos_[0]),
-               box_vbos_);
+  glGenBuffers(sizeof(cube_vbos_) / sizeof(cube_vbos_[0]),
+               cube_vbos_);
   glBindBuffer(GL_ARRAY_BUFFER,
-               box_vbos_[0]);
+               cube_vbos_[0]);
   glBufferData(GL_ARRAY_BUFFER,
                sizeof(normalized_cube_coords),
                normalized_cube_coords,
                GL_STATIC_DRAW);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, box_vbos_[1]);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cube_vbos_[1]);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER,
                sizeof(normalized_cube_indices),
                normalized_cube_indices,
@@ -120,13 +120,13 @@ void BadEngine::init_cube_program()
 
   glEnableVertexAttribArray(0);
 
-  box_shader_programme_ = Shader("box_vs.glsl", "box_fs.glsl");
+  cube_shader_programme_ = Shader("containing_cube_vs.glsl", "containing_cube_fs.glsl");
 
-  if (box_shader_programme_.get_error())
+  if (cube_shader_programme_.get_error())
   {
-    auto msgv = box_shader_programme_.get_message();
+    auto msgv = cube_shader_programme_.get_message();
     msg_ = VMSG_TO_STR(msgv);
-    status_ = box_shader_programme_.get_error() ? R_FAILURE : R_SUCCESS;
+    status_ = cube_shader_programme_.get_error() ? R_FAILURE : R_SUCCESS;
   }
 }
 
@@ -223,21 +223,19 @@ void BadEngine::key_callback(GLFWwindow *window, int key, int scancode, int acti
 
 void BadEngine::set_world_dims(glm::vec3 dims)
 {
-  box_scale_ = dims;
+  cube_scale_ = dims;
 }
 
 BadEngine::operator bool() const
 {
   return status_ == R_SUCCESS;
 }
-void BadEngine::draw()
+
+void BadEngine::draw_sphere_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans)
 {
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   sphere_shader_programme_.use();
   glBindVertexArray(sphere_vao_[0]);
 
-  glm::mat4 view_trans = cam_->get_view();
-  glm::mat4 projection_trans = cam_->get_projection();
   glm::vec3 cam_pos = cam_->get_pos();
 
   sphere_shader_programme_.set_mat4("view", view_trans);
@@ -255,24 +253,39 @@ void BadEngine::draw()
     sphere_shader_programme_.set_mat4("model", model_trans);
     glDrawElements(GL_TRIANGLES, (GLsizei)sphere_indices_.size(), GL_UNSIGNED_INT, NULL);
   }
+}
 
-  box_shader_programme_.use();
-  glBindVertexArray(box_vao_[0]);
+void BadEngine::draw_cube_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans)
+{
+  cube_shader_programme_.use();
+  glBindVertexArray(cube_vao_[0]);
 
-  box_shader_programme_.set_mat4("view", view_trans);
-  box_shader_programme_.set_mat4("projection", projection_trans);
+  cube_shader_programme_.set_mat4("view", view_trans);
+  cube_shader_programme_.set_mat4("projection", projection_trans);
   glm::mat4 model_trans(1.f);
   model_trans = glm::translate(model_trans,
-                               glm::vec3(box_.pos.x,
-                                         box_.pos.y,
-                                         box_.pos.z));
-  model_trans = glm::scale(model_trans, box_scale_);
-  box_shader_programme_.set_mat4("model", model_trans);
+                               glm::vec3(cube_.pos.x,
+                                         cube_.pos.y,
+                                         cube_.pos.z));
+  model_trans = glm::scale(model_trans, cube_scale_);
+  cube_shader_programme_.set_mat4("model", model_trans);
 
   glDrawElements(GL_LINE_STRIP,
                  sizeof(normalized_cube_indices) / sizeof(normalized_cube_indices[0]),
                  GL_UNSIGNED_INT,
                  NULL);
+}
+
+void BadEngine::draw()
+{
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+  glm::mat4 view_trans = cam_->get_view();
+  glm::mat4 projection_trans = cam_->get_projection();
+
+  draw_sphere_program(view_trans, projection_trans);
+
+  draw_cube_program(view_trans, projection_trans);
 
   glfwSwapBuffers(window_);
   glfwPollEvents();

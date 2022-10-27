@@ -49,6 +49,8 @@ private:
   void demo_add_spheres();
   void process_input();
   void init_sphere_program();
+  void draw_sphere_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans);
+  void draw_cube_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans);
   void init_cube_program();
 
 private:
@@ -68,13 +70,13 @@ private:
   std::vector<float> sphere_data_;
   float sphere_rad_;
 
-  Shader box_shader_programme_;
-  GLuint box_vbos_[2];
-  GLuint box_vao_[1];
+  Shader cube_shader_programme_;
+  GLuint cube_vbos_[2];
+  GLuint cube_vao_[1];
   std::vector<unsigned int> box_indices_;
   std::vector<float> box_data_;
-  glm::vec3 box_scale_;
-  SimpleBox box_;
+  glm::vec3 cube_scale_;
+  SimpleBox cube_;
   std::function<void(int, int, int, int)> logic_key_handler_cb_;
   const GLuint screen_width_ = 1920;
   const GLuint screen_height_ = 1080;

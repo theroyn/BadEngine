@@ -50,13 +50,13 @@
     <None Include="base_fs.glsl">
       <Filter>shaders</Filter>
     </None>
-    <None Include="box_fs.glsl">
-      <Filter>shaders</Filter>
-    </None>
-    <None Include="box_vs.glsl">
-      <Filter>shaders</Filter>
-    </None>
     <None Include="packages.config" />
+    <None Include="containing_cube_fs.glsl">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="containing_cube_vs.glsl">
+      <Filter>shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="utils.h">
