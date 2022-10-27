@@ -70,6 +70,7 @@ artifacts/
 *.pidb
 *.svclog
 *.scc
+*.idb
 
 # Chutzpah Test files
 _Chutzpah*
@@ -273,6 +274,5 @@ __pycache__/
 /CFD/visualinfo.exe
 *.exe
 /CFD/IEShims.dll
-/CFD/tbbmalloc_proxy.dll
-/CFD/tbbmalloc.dll
-/CFD/tbb.dll
+/CFD/tbb*.dll
+
