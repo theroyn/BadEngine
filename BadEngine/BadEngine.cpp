@@ -31,8 +31,6 @@ void framebuffer_size_cb(GLFWwindow *window, int width, int height)
 BadEngine::BadEngine(std::function<void(int, int, int, int)> logic_key_handler_cb) : status_(R_SUCCESS),
                                                                                      msg_(""),
                                                                                      cam_(nullptr),
-                                                                                     sphere_vbos_{ 0 },
-                                                                                     sphere_vao_{ 0 },
                                                                                      sphere_rad_{ .2f },
                                                                                      //sphere_rad_ { .001f, .001f, .001f},
                                                                                      cube_vbos_{ 0 },
@@ -60,24 +58,28 @@ void BadEngine::init_sphere_program()
 {
   parser_.parse("SphereRad1.obj");
 
-  sphere_data_ = parser_.get_data();
-  sphere_indices_ = parser_.get_indices();
+  std::vector<float> sphere_data = parser_.get_data();
+  std::vector<unsigned int> sphere_indices = parser_.get_indices();
 
-  glGenVertexArrays(1, sphere_vao_);
-  glBindVertexArray(sphere_vao_[0]);
+  sphere_count_ = sphere_indices.size();
 
-  glGenBuffers(sizeof(sphere_vbos_) / sizeof(sphere_vbos_[0]),
-               sphere_vbos_);
+  glGenVertexArrays(1, &sphere_vao_);
+  glBindVertexArray(sphere_vao_);
+
+  GLuint sphere_vbos[2];
+
+  glGenBuffers(sizeof(sphere_vbos) / sizeof(sphere_vbos[0]),
+               sphere_vbos);
   glBindBuffer(GL_ARRAY_BUFFER,
-               sphere_vbos_[0]);
+               sphere_vbos[0]);
   glBufferData(GL_ARRAY_BUFFER,
-               sphere_data_.size() * sizeof(sphere_data_[0]),
-               &sphere_data_[0],
+               sphere_data.size() * sizeof(sphere_data[0]),
+               &sphere_data[0],
                GL_STATIC_DRAW);
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sphere_vbos_[1]);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sphere_vbos[1]);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-               sphere_indices_.size() * sizeof(sphere_indices_[0]),
-               &sphere_indices_[0],
+               sphere_indices.size() * sizeof(sphere_indices[0]),
+               &sphere_indices[0],
                GL_STATIC_DRAW);
 
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), reinterpret_cast<void *>(0));
@@ -93,6 +95,40 @@ void BadEngine::init_sphere_program()
     auto msgv = sphere_shader_programme_.get_message();
     msg_ = VMSG_TO_STR(msgv);
     status_ = sphere_shader_programme_.get_error() ? R_FAILURE : R_SUCCESS;
+  }
+}
+
+void BadEngine::init_boxes_program()
+{
+  box_count_ = sizeof(cube_coords_w_normals_n_textures) / sizeof(cube_coords_w_normals_n_textures[0]);
+
+  glGenVertexArrays(1, &box_vao_);
+  glBindVertexArray(box_vao_);
+
+  GLuint box_vbo;
+
+  glGenBuffers(1, &box_vbo);
+  glBindBuffer(GL_ARRAY_BUFFER, box_vbo);
+  glBufferData(GL_ARRAY_BUFFER,
+               sizeof(cube_coords_w_normals_n_textures),
+               cube_coords_w_normals_n_textures,
+               GL_STATIC_DRAW);
+
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), reinterpret_cast<void *>(0));
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), reinterpret_cast<void *>(0 + 3 * sizeof(GLfloat)));
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), reinterpret_cast<void *>(0 + 6 * sizeof(GLfloat)));
+
+  glEnableVertexAttribArray(0);
+  glEnableVertexAttribArray(1);
+  glEnableVertexAttribArray(2);
+
+  box_shader_programme_ = Shader("base_vs.glsl", "base_fs.glsl");
+
+  if (box_shader_programme_.get_error())
+  {
+    auto msgv = box_shader_programme_.get_message();
+    msg_ = VMSG_TO_STR(msgv);
+    status_ = false;
   }
 }
 
@@ -196,6 +232,13 @@ void BadEngine::init()
     throw std::runtime_error(msg_);
   }
 
+  init_boxes_program();
+
+  if (status_ != R_SUCCESS)
+  {
+    throw std::runtime_error(msg_);
+  }
+
   init_cube_program();
 
   if (status_ != R_SUCCESS)
@@ -234,7 +277,7 @@ BadEngine::operator bool() const
 void BadEngine::draw_sphere_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans)
 {
   sphere_shader_programme_.use();
-  glBindVertexArray(sphere_vao_[0]);
+  glBindVertexArray(sphere_vao_);
 
   glm::vec3 cam_pos = cam_->get_pos();
 
@@ -251,8 +294,25 @@ void BadEngine::draw_sphere_program(const glm::mat4 &view_trans, const glm::mat4
                                            sphere->pos.z));
     model_trans = glm::scale(model_trans, glm::vec3(sphere_rad_));
     sphere_shader_programme_.set_mat4("model", model_trans);
-    glDrawElements(GL_TRIANGLES, (GLsizei)sphere_indices_.size(), GL_UNSIGNED_INT, NULL);
+    glDrawElements(GL_TRIANGLES, (GLsizei)sphere_count_, GL_UNSIGNED_INT, NULL);
   }
+}
+
+void BadEngine::draw_boxes_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans)
+{
+  box_shader_programme_.use();
+  glBindVertexArray(box_vao_);
+
+  glm::vec3 cam_pos = cam_->get_pos();
+
+  box_shader_programme_.set_mat4("view", view_trans);
+  box_shader_programme_.set_mat4("projection", projection_trans);
+  box_shader_programme_.set_vec3("eye_pos", cam_pos);
+
+  glm::mat4 model_trans = glm::translate(glm::mat4(1.f), glm::vec3(.5f, .5f, .5f));
+  model_trans = glm::scale(model_trans, glm::vec3(2.f));
+  box_shader_programme_.set_mat4("model", model_trans);
+  glDrawArrays(GL_TRIANGLES, 0, (GLsizei)box_count_);
 }
 
 void BadEngine::draw_cube_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans)
@@ -285,6 +345,8 @@ void BadEngine::draw()
 
   draw_sphere_program(view_trans, projection_trans);
 
+  draw_boxes_program(view_trans, projection_trans);
+
   draw_cube_program(view_trans, projection_trans);
 
   glfwSwapBuffers(window_);
@@ -313,7 +375,7 @@ bool BadEngine::loop_done() const
 void BadEngine::run()
 {
   sphere_shader_programme_.use();
-  glBindVertexArray(sphere_vao_[0]);
+  glBindVertexArray(sphere_vao_);
 
   while (!loop_done())
   {
