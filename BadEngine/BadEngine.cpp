@@ -174,7 +174,8 @@ void BadEngine::init()
     msg_ = "Cannot initiate opengl.";
     throw std::runtime_error(msg_);
   }
-
+  add_box(glm::vec3(0.f, 0.f, 2.f), glm::vec3(1.f, 1.f, 1.f));
+  add_box(glm::vec3(0.f, 0.f, 4.f), glm::vec3(1.f, 2.f, 1.f));
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -247,33 +248,6 @@ void BadEngine::init()
   }
 }
 
-void BadEngine::key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
-{
-  BadEngine *me = static_cast<BadEngine *>(glfwGetWindowUserPointer(window));
-
-  switch (key)
-  {
-  case GLFW_KEY_ESCAPE:
-  case GLFW_KEY_ENTER:
-  {
-    glfwSetWindowShouldClose(window, GL_TRUE);
-  }
-  break;
-  default:
-    me->logic_key_handler_cb_(key, scancode, action, mods);
-  }
-}
-
-void BadEngine::set_world_dims(glm::vec3 dims)
-{
-  cube_scale_ = dims;
-}
-
-BadEngine::operator bool() const
-{
-  return status_ == R_SUCCESS;
-}
-
 void BadEngine::draw_sphere_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans)
 {
   sphere_shader_programme_.use();
@@ -308,11 +282,11 @@ void BadEngine::draw_boxes_program(const glm::mat4 &view_trans, const glm::mat4 
   box_shader_programme_.set_mat4("view", view_trans);
   box_shader_programme_.set_mat4("projection", projection_trans);
   box_shader_programme_.set_vec3("eye_pos", cam_pos);
-
-  glm::mat4 model_trans = glm::translate(glm::mat4(1.f), glm::vec3(.5f, .5f, .5f));
-  model_trans = glm::scale(model_trans, glm::vec3(2.f));
-  box_shader_programme_.set_mat4("model", model_trans);
-  glDrawArrays(GL_TRIANGLES, 0, (GLsizei)box_count_);
+  for (Box *box : boxes_)
+  {
+    box_shader_programme_.set_mat4("model", box->trans);
+    glDrawArrays(GL_TRIANGLES, 0, (GLsizei)box_count_);
+  }
 }
 
 void BadEngine::draw_cube_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans)
@@ -365,6 +339,33 @@ void BadEngine::draw()
   file_copier_.Push(buffer, buffer_size);
 
 #endif
+}
+
+void BadEngine::key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
+{
+  BadEngine *me = static_cast<BadEngine *>(glfwGetWindowUserPointer(window));
+
+  switch (key)
+  {
+  case GLFW_KEY_ESCAPE:
+  case GLFW_KEY_ENTER:
+  {
+    glfwSetWindowShouldClose(window, GL_TRUE);
+  }
+  break;
+  default:
+    me->logic_key_handler_cb_(key, scancode, action, mods);
+  }
+}
+
+void BadEngine::set_world_dims(glm::vec3 dims)
+{
+  cube_scale_ = dims;
+}
+
+BadEngine::operator bool() const
+{
+  return status_ == R_SUCCESS;
 }
 
 bool BadEngine::loop_done() const
@@ -440,6 +441,12 @@ void BadEngine::set_sphere_acc(int id, float x, float y, float z)
   spheres_[id]->acc.x = x;
   spheres_[id]->acc.y = y;
   spheres_[id]->acc.z = z;
+}
+
+size_t BadEngine::add_box(const glm::vec3 &center, const glm::vec3 &dims)
+{
+  boxes_.push_back(new Box(center, dims));
+  return boxes_.size() - 1;
 }
 
 //#define APPLICATION_MODE

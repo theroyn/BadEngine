@@ -218,6 +218,7 @@ xcopy "$(ProjectDir)*.obj" "$(SolutionDir)CFD" /Y /I</Command>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BadEngine.h" />
+    <ClInclude Include="Box.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="const.h" />
     <ClInclude Include="coords.h" />

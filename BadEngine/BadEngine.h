@@ -7,6 +7,7 @@
 #include "OBJParser.h"
 #include "Shader.h"
 #include "Sphere.h"
+#include "Box.h"
 #include <functional>
 
 
@@ -45,6 +46,8 @@ public:
   size_t add_sphere(float x, float y, float z);
   void set_world_dims(glm::vec3 dims);
 
+  size_t add_box(const glm::vec3 &center, const glm::vec3 &dims);
+
 private:
   void demo_add_spheres();
   void process_input();
@@ -71,6 +74,7 @@ private:
   size_t sphere_count_ = 0;
   float sphere_rad_;
 
+  std::vector<Box *> boxes_;
   Shader box_shader_programme_;
   GLuint box_vao_ = 0;
   size_t box_count_ = 0;
