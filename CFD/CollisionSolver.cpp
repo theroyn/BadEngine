@@ -41,7 +41,7 @@ void CollisionSolver::solve_collided_spheres(Sphere *s1,
 }
 
 void CollisionSolver::handle_world_collision2_coord(Sphere *s,
-                                                   float glm::vec3::*coord)
+                                                    float glm::vec3::*coord)
 {
   if (s->pos.*coord - s->rad <= center_.*coord - dims_.*coord / 2 && s->vel.*coord < 0)
   {
@@ -99,12 +99,12 @@ void CollisionSolver::handle_world_collision(Sphere *s)
 /*******************************************************************************
  * class NaiveCollisionSolver Implementation
  */
-void NaiveCollisionSolver::handle_collisions()
+void NaiveCollisionSolver::handle_collisions(const std::vector<Sphere *> &spheres)
 {
-  for (auto sit1 = spheres_.begin(); sit1 != spheres_.end(); ++sit1)
+  for (auto sit1 = spheres.begin(); sit1 != spheres.end(); ++sit1)
   {
     Sphere *s1 = *sit1;
-    for (auto sit2 = sit1 + 1; sit2 != spheres_.end(); ++sit2)
+    for (auto sit2 = sit1 + 1; sit2 != spheres.end(); ++sit2)
     {
       Sphere *s2 = *sit2;
 
@@ -115,14 +115,13 @@ void NaiveCollisionSolver::handle_collisions()
     handle_world_collision(s1);
   }
 }
-GridRangeSolver::GridRangeSolver(std::vector<Sphere *> &spheres,
-                  const SphereGridMap &map,
-                  GridCollisionSolver *solver) :
-                                              spheres_(spheres),
-                                              map_(map),
-                                              solver_(solver) {}
+GridRangeSolver::GridRangeSolver(const std::vector<Sphere *> &spheres,
+                                 const SphereGridMap &map,
+                                 GridCollisionSolver *solver) : spheres_(spheres),
+                                                                map_(map),
+                                                                solver_(solver) {}
 
-void GridRangeSolver::operator() (const tbb::blocked_range<size_t>& r) const
+void GridRangeSolver::operator()(const tbb::blocked_range<size_t> &r) const
 {
   for (size_t i = r.begin(); i != r.end(); ++i)
   {
@@ -155,29 +154,28 @@ void GridRangeSolver::operator() (const tbb::blocked_range<size_t>& r) const
 /*******************************************************************************
  * class GridCollisionSolver Implementation
  */
-void GridCollisionSolver::handle_collisions()
+void GridCollisionSolver::handle_collisions(const std::vector<Sphere *> &spheres)
 {
-  map_.update_map(spheres_);
+  map_.update_map(spheres);
 
-  tbb::parallel_for(tbb::blocked_range<size_t>(0, spheres_.size()), GridRangeSolver(spheres_, map_, this));
+  tbb::parallel_for(tbb::blocked_range<size_t>(0, spheres.size()), GridRangeSolver(spheres, map_, this));
 }
 
 /*******************************************************************************
  * class SolverFactory Implementation
  */
 CollisionSolver *SolverFactory::create(sphere_coll_alg type,
-
-                                       std::vector<Sphere *> &spheres, float radius)
+                                       float radius)
 {
   CollisionSolver *sol = nullptr;
 
   switch (type)
   {
   case sphere_coll_alg::naive:
-    sol = new NaiveCollisionSolver(spheres, radius);
+    sol = new NaiveCollisionSolver();
     break;
   case sphere_coll_alg::grid:
-    sol = new GridCollisionSolver(spheres, radius);
+    sol = new GridCollisionSolver(radius);
     break;
   default:
     assert(0);

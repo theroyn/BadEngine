@@ -14,12 +14,12 @@ Simulator::Simulator(unsigned int spheres_n) : sphere_coll_alg_(sphere_coll_alg:
                                                sphere_rad_(.1f),
                                                engine_(std::bind(&Simulator::key_callback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4))
 {
-  col_solver_ = SolverFactory::create(sphere_coll_alg_, spheres_, sphere_rad_);
+  col_solver_ = SolverFactory::create(sphere_coll_alg_, sphere_rad_);
 }
 
 void Simulator::handle_collisions()
 {
-  col_solver_->handle_collisions();
+  col_solver_->handle_collisions(spheres_);
 }
 
 Simulator::~Simulator()

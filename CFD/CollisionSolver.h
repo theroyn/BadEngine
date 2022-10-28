@@ -17,14 +17,11 @@ enum class sphere_coll_alg
 class CollisionSolver
 {
 public:
-  CollisionSolver(std::vector<Sphere *> &spheres, float rad) :
-                                          spheres_(spheres),
-                                          center_(0.f, 0.f, 0.f),
-                                          dims_(5.f),
-                                          rad_(rad){}
+  CollisionSolver() : center_(0.f, 0.f, 0.f),
+                      dims_(5.f) {}
 
 public:
-  virtual void handle_collisions() = 0;
+  virtual void handle_collisions(const std::vector<Sphere *> &spheres) = 0;
 
 public: // Formerly ContainingBox
   glm::vec3 dims() const { return dims_; }
@@ -39,11 +36,7 @@ protected:
 
 private:
   void handle_world_collision2_coord(Sphere *s,
-                                    float glm::vec3::* coord);
-
-protected:
-  std::vector<Sphere *> &spheres_;
-  const float rad_;
+                                     float glm::vec3::*coord);
 
 private:
   glm::vec3 center_; // position of the box's center.
@@ -53,11 +46,12 @@ private:
 class NaiveCollisionSolver : public CollisionSolver
 {
 public:
-  NaiveCollisionSolver(std::vector<Sphere *> &spheres, float rad) : CollisionSolver(spheres, rad)
-  { }
+  NaiveCollisionSolver() : CollisionSolver()
+  {
+  }
 
 public:
-  virtual void handle_collisions();
+  virtual void handle_collisions(const std::vector<Sphere *> &spheres) override;
 };
 
 struct pair_hash
@@ -72,14 +66,16 @@ struct pair_hash
 class GridCollisionSolver : public CollisionSolver
 {
   friend class GridRangeSolver;
-public:
-  // todo: execution order is correct atm(CollisionSolver before map_), but do this better
-  GridCollisionSolver(std::vector<Sphere *> &spheres, float rad) : CollisionSolver(spheres, rad),
-                                                        map_(rad_, dims())
-  { }
 
 public:
-  virtual void handle_collisions();
+  // todo: execution order is correct atm(CollisionSolver before map_), but do this better
+  GridCollisionSolver(float rad) : CollisionSolver(),
+                                   map_(rad, dims())
+  {
+  }
+
+public:
+  virtual void handle_collisions(const std::vector<Sphere *> &spheres) override;
 
 private:
   SphereGridMap map_;
@@ -89,21 +85,21 @@ private:
 class SolverFactory
 {
 public:
-  static CollisionSolver *create(sphere_coll_alg type, std::vector<Sphere *> &spheres, float radius);
+  static CollisionSolver *create(sphere_coll_alg type, float radius = 0.f);
 };
 
 class GridRangeSolver
 {
 public:
-  GridRangeSolver(std::vector<Sphere *> &spheres,
+  GridRangeSolver(const std::vector<Sphere *> &spheres,
                   const SphereGridMap &map,
                   GridCollisionSolver *solver);
 
 public:
-  void operator() (const tbb::blocked_range<size_t> &r) const;
+  void operator()(const tbb::blocked_range<size_t> &r) const;
 
 private:
-  std::vector<Sphere *> &spheres_;
+  const std::vector<Sphere *> &spheres_;
   const SphereGridMap &map_;
   GridCollisionSolver *solver_;
 };

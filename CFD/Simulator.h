@@ -15,8 +15,8 @@ public:
   ~Simulator();
 
 public:
-  void add_global_force(const std::string& name, glm::vec3 f);
-  void remove_global_force(const std::string& name);
+  void add_global_force(const std::string &name, glm::vec3 f);
+  void remove_global_force(const std::string &name);
 
 public:
   void run();
@@ -35,7 +35,7 @@ private:
   const float base_h_;
   unsigned int spheres_n_;
   float sphere_rad_;
-  float last_time_;
+  float last_time_ = -1.f;
   BadEngine engine_;
   std::map<std::string, glm::vec3> g_forces_; // named forces
   std::vector<Sphere *> spheres_;
