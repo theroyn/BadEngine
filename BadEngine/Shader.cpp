@@ -12,15 +12,12 @@ GLint Shader::exit_error()
   return status;
 }
 
-Shader::Shader(const char *vertex_path, const char *fragment_path) :
-  program_(0),
-  result_(GL_TRUE)
+Shader::Shader(const char *vertex_path, const char *fragment_path)
 {
   load_program(result_, msg_, vertex_path, fragment_path);
 }
 
-void Shader::load_program(GLint &result, vector<GLchar>  &msg,
-                          const char *vertex_path, const char *fragment_path)
+void Shader::load_program(GLint &result, vector<GLchar> &msg, const char *vertex_path, const char *fragment_path)
 {
   program_ = 0;
 
@@ -63,7 +60,7 @@ GLuint Shader::load_shader(const char *path, GLenum type, GLint &result, std::ve
   string shaderStr = utility::read_file(path);
   const char *shaderSrc = shaderStr.c_str();
 
-  int log_length = 0;;
+  int log_length = 0;
 
   // Compile vertex shader
   utility::dbg_print("Compiling shader.");
@@ -88,7 +85,7 @@ GLuint Shader::load_shader(const char *path, GLenum type, GLint &result, std::ve
 
 void Shader::set_bool(const std::string &name, bool value) const
 {
-  glUniform1i(glGetUniformLocation(program_, name.c_str()), ( int )value); 
+  glUniform1i(glGetUniformLocation(program_, name.c_str()), (int)value);
 }
 
 void Shader::set_int(const std::string &name, int value) const

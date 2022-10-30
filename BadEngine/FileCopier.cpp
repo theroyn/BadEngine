@@ -55,8 +55,8 @@ void FileCopier::Copy()
 
       std::string file_counter_str = std::to_string(file_counter_++);
 
-      int gap = 5 - file_counter_str.size();
-      gap = (gap < 0) ? 0 : gap;
+      int gap = std::max(0, 5 - static_cast<int>(file_counter_str.size()));
+
       for (int i = 0; i < gap; ++i)
       {
         file_counter_str = "0" + file_counter_str;
