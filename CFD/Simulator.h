@@ -16,7 +16,9 @@ public:
 
 public:
   void add_global_force(const std::string &name, glm::vec3 f);
+  void add_global_torque(const std::string &name, glm::vec3 f);
   void remove_global_force(const std::string &name);
+  void remove_global_torque(const std::string &name);
 
 public:
   void run();
@@ -40,6 +42,7 @@ private:
   double last_time_ = -1.;
   BadEngine engine_;
   std::map<std::string, glm::vec3> g_forces_; // named forces
+  std::map<std::string, glm::vec3> g_torques_; // named torques
   std::vector<Sphere *> spheres_;
   std::vector<Box *> boxes_;
   CollisionSolver *col_solver_;

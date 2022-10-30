@@ -9,7 +9,7 @@
 
 Simulator::Simulator(unsigned int spheres_n) : sphere_coll_alg_(sphere_coll_alg::grid),
                                                base_h_(.03f),
-                                               dampening_(.009f),
+                                               dampening_(.09f),
                                                spheres_n_(spheres_n),
                                                sphere_rad_(.1f),
                                                engine_(std::bind(&Simulator::key_callback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4))
@@ -31,6 +31,12 @@ void Simulator::add_global_force(const std::string &name, glm::vec3 f)
   // override existing force if there is one
   g_forces_[name] = f;
 }
+void Simulator::add_global_torque(const std::string &name, glm::vec3 f)
+{
+  // override existing force if there is one
+  g_torques_[name] = f;
+}
+
 void Simulator::remove_global_force(const std::string &name)
 {
   auto it = g_forces_.find(name);
@@ -41,6 +47,19 @@ void Simulator::remove_global_force(const std::string &name)
   else
   {
     g_forces_.erase(it);
+  }
+}
+
+void Simulator::remove_global_torque(const std::string &name)
+{
+  auto it = g_torques_.find(name);
+  if (it == g_torques_.end())
+  {
+    std::cerr << "No torque named " << name << "\n";
+  }
+  else
+  {
+    g_torques_.erase(it);
   }
 }
 
@@ -113,16 +132,34 @@ void Simulator::integrate_boxes(float h)
   for (auto box : boxes_)
   {
     glm::vec3 acc(0.f);
+    glm::vec3 torque(0.f);
 
     for (auto f : g_forces_)
     {
       acc += f.second / box->mass;
     }
+    for (auto f : g_torques_)
+    {
+      torque += f.second / box->mass;
+    }
 
     // internal forces calculations
     glm::vec3 dampening_force = -dampening_ * box->vel;
+    acc += dampening_force / box->mass;
+
+    glm::vec3 dampening_torque = -dampening_ * box->angular_vel;
+    torque += dampening_torque / box->mass;
+
     //box->center += h * box->vel;
     box->vel += h * acc;
+
+    glm::mat3 R = glm::toMat3(box->orientation);
+    glm::mat3 IInv = R * box->IBodyInv * glm::transpose(R);
+
+    // angular_momentum
+    glm::vec3 L_dot = torque;
+
+    box->angular_vel += IInv * L_dot * h;
 
     box->orientation += 0.5f * glm::quat(0.f, box->angular_vel) * box->orientation * h;
     box->orientation = glm::normalize(box->orientation);
@@ -228,6 +265,31 @@ void Simulator::key_callback(int key, int scancode, int action, int mods)
     {
       std::cout << "P release!!!\n";
       remove_global_force("P-force");
+    }
+    else if (action == GLFW_REPEAT)
+    {
+      // ignored
+    }
+    else
+    {
+      std::cout << "P unknown action:" << action << "\n";
+    }
+  }
+  break;
+  case GLFW_KEY_T:
+  {
+    if (action == GLFW_PRESS)
+    {
+      std::cout << "T press!!!\n";
+
+      glm::vec3 torque(get_rand(-.1f, .1f), .5f, get_rand(-.1f, .1f));
+      std::cout << "adding:(" << torque.x << "," << torque.y << "," << torque.z << "\n";
+      add_global_torque("torque", torque);
+    }
+    else if (action == GLFW_RELEASE)
+    {
+      std::cout << "T release!!!\n";
+      remove_global_torque("torque");
     }
     else if (action == GLFW_REPEAT)
     {
