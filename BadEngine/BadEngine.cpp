@@ -41,7 +41,6 @@ BadEngine::BadEngine(std::function<void(int, int, int, int)> logic_key_handler_c
 {
 }
 
-
 BadEngine::~BadEngine()
 {
   if (cam_)
@@ -267,7 +266,7 @@ void BadEngine::draw_sphere_program(const glm::mat4 &view_trans, const glm::mat4
     // mat(I) * mat(OP_a) * mat(OP_b) * v.
     model_trans = glm::translate(model_trans,
                                  glm::vec3(sphere->pos));
-    model_trans = glm::scale(model_trans, glm::vec3(sphere_rad_));
+    model_trans = glm::scale(model_trans, glm::vec3(sphere->rad));
     sphere_shader_programme_.set_mat4("model", model_trans);
     glDrawElements(GL_TRIANGLES, (GLsizei)sphere_count_, GL_UNSIGNED_INT, NULL);
   }
