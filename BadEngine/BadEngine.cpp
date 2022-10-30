@@ -174,8 +174,7 @@ void BadEngine::init()
     msg_ = "Cannot initiate opengl.";
     throw std::runtime_error(msg_);
   }
-  add_box(glm::vec3(0.f, 0.f, 2.f), glm::vec3(1.f, 1.f, 1.f));
-  add_box(glm::vec3(0.f, 0.f, 4.f), glm::vec3(1.f, 2.f, 1.f));
+
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -262,10 +261,12 @@ void BadEngine::draw_sphere_program(const glm::mat4 &view_trans, const glm::mat4
   for (Sphere *sphere : spheres_)
   {
     glm::mat4 model_trans(1.f);
+    // glm operation are equal to multiplying by an affine matrix from the right,
+    // so if you multiply OP_a first and then OP_b, and in the shader you
+    // multiply model_trans * v, OP_b would occur BEFORE  OP_a:
+    // mat(I) * mat(OP_a) * mat(OP_b) * v.
     model_trans = glm::translate(model_trans,
-                                 glm::vec3(sphere->pos.x,
-                                           sphere->pos.y,
-                                           sphere->pos.z));
+                                 glm::vec3(sphere->pos));
     model_trans = glm::scale(model_trans, glm::vec3(sphere_rad_));
     sphere_shader_programme_.set_mat4("model", model_trans);
     glDrawElements(GL_TRIANGLES, (GLsizei)sphere_count_, GL_UNSIGNED_INT, NULL);
@@ -284,7 +285,29 @@ void BadEngine::draw_boxes_program(const glm::mat4 &view_trans, const glm::mat4 
   box_shader_programme_.set_vec3("eye_pos", cam_pos);
   for (Box *box : boxes_)
   {
-    box_shader_programme_.set_mat4("model", box->trans);
+    glm::mat4 model_trans(1.f);
+    model_trans = glm::translate(model_trans,
+                                 glm::vec3(box->center));
+
+    /**
+   // conversion code of quaternion to angle+axis:
+   float theta = 0.f;
+    glm::vec3 axis(0.f);
+    if (abs(box->orientation.w - 1.f) < .001f)
+    {
+      axis = glm::vec3(1.f, 0.f, 0.f);
+    }
+    else
+    {
+      theta = 2.f * acos(box->orientation.w);
+      float sine = 1.f / sin(0.5f * theta);
+      axis = glm::vec3(box->orientation.x * sine, box->orientation.y * sine, box->orientation.z * sine);
+    }
+    //model_trans = glm::rotate(model_trans, theta, axis)
+    */
+    model_trans *= glm::toMat4(box->orientation);
+    model_trans = glm::scale(model_trans, glm::vec3(box->dims));
+    box_shader_programme_.set_mat4("model", model_trans);
     glDrawArrays(GL_TRIANGLES, 0, (GLsizei)box_count_);
   }
 }
@@ -419,7 +442,12 @@ size_t BadEngine::add_sphere(float x, float y, float z)
 
 Sphere *BadEngine::get_sphere(size_t id) const
 {
-  return spheres_[id];
+  return spheres_.at(id);
+}
+
+Box *BadEngine::get_box(size_t id) const
+{
+  return boxes_.at(id);
 }
 
 void BadEngine::set_sphere_pos(int id, float x, float y, float z)
@@ -434,13 +462,6 @@ void BadEngine::set_sphere_velocity(int id, float x, float y, float z)
   spheres_[id]->vel.x = x;
   spheres_[id]->vel.y = y;
   spheres_[id]->vel.z = z;
-}
-
-void BadEngine::set_sphere_acc(int id, float x, float y, float z)
-{
-  spheres_[id]->acc.x = x;
-  spheres_[id]->acc.y = y;
-  spheres_[id]->acc.z = z;
 }
 
 size_t BadEngine::add_box(const glm::vec3 &center, const glm::vec3 &dims)

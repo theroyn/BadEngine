@@ -24,6 +24,8 @@ public:
 
 private:
   void integrate();
+  void integrate_spheres(float h);
+  void integrate_boxes(float h);
   void handle_collisions();
   void handle_sphere_collisions_naive_alg();
 
@@ -31,14 +33,15 @@ private:
   void key_callback(int key, int scancode, int action, int mods);
 
 private:
-  float h_, dampening_;
+  float dampening_;
   const float base_h_;
   unsigned int spheres_n_;
   float sphere_rad_;
-  float last_time_ = -1.f;
+  double last_time_ = -1.;
   BadEngine engine_;
   std::map<std::string, glm::vec3> g_forces_; // named forces
   std::vector<Sphere *> spheres_;
+  std::vector<Box *> boxes_;
   CollisionSolver *col_solver_;
   const sphere_coll_alg sphere_coll_alg_;
 };

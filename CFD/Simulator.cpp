@@ -1,14 +1,14 @@
 #include "Simulator.h"
 
-#include <stdlib.h>     /* srand, rand */
-#include <time.h>       /* time */
+#include <stdlib.h> /* srand, rand */
+#include <time.h>   /* time */
 #include <glm/gtx/norm.hpp>
 #include <functional>
 
+#include <utils.h>
 
 Simulator::Simulator(unsigned int spheres_n) : sphere_coll_alg_(sphere_coll_alg::grid),
-                                               h_(.03f),
-                                               base_h_(h_),
+                                               base_h_(.03f),
                                                dampening_(.009f),
                                                spheres_n_(spheres_n),
                                                sphere_rad_(.1f),
@@ -48,7 +48,7 @@ void Simulator::integrate()
 {
   static bool init = true;
 
-  float curr_time = ( float )glfwGetTime();
+  double curr_time = glfwGetTime();
 
   if (init)
   {
@@ -56,23 +56,35 @@ void Simulator::integrate()
     last_time_ = curr_time;
   }
 
-  float delta = curr_time - last_time_;
+  float delta = (float)(curr_time - last_time_);
   last_time_ = curr_time;
 
-  h_ = base_h_ * 133.33f * delta;
+  float h = base_h_ * 133.33f * delta;
+  integrate_spheres(h);
+  integrate_boxes(h);
+}
 
+static float get_rand(float low = -.5f, float high = .5f)
+{
+  float r3 = low + static_cast<float>(rand()) / (static_cast<float>(RAND_MAX / (high - low)));
+
+  return r3;
+}
+
+void Simulator::integrate_spheres(float h)
+{
   for (auto sphere : spheres_)
   {
-    sphere->acc = glm::vec3(0.f);
+    glm::vec3 acc(0.f);
 
     for (auto f : g_forces_)
     {
-      sphere->acc += f.second / sphere->mass;
+      acc += f.second / sphere->mass;
     }
 
     // internal forces calculations
     glm::vec3 dampening_force = -dampening_ * sphere->vel;
-    sphere->acc += dampening_force / sphere->mass;
+    acc += dampening_force / sphere->mass;
     static Sphere *lowSphere = nullptr;
     static size_t cnt = 0;
 
@@ -82,52 +94,82 @@ void Simulator::integrate()
     }
     if (lowSphere == sphere && cnt++ % 100 == 0)
     {
-      std::cout <<"h_:"<<h_<< ", prev pos (" << lowSphere->pos.x << "," << lowSphere->pos.y << "," << lowSphere->pos.z << ")\n";
+      std::cout << "h:" << h << ", prev pos (" << lowSphere->pos.x << "," << lowSphere->pos.y << "," << lowSphere->pos.z << ")\n";
     }
-    // pos integration before velocity, since integration is relative to values from previous step.
-    sphere->pos += h_ * sphere->vel;
+    // semi-implicit euler integration
+    sphere->vel += h * acc;
+    sphere->pos += h * sphere->vel;
     if (lowSphere == sphere && cnt % 100 == 0)
     {
       std::cout << "curr pos (" << lowSphere->pos.x << "," << lowSphere->pos.y << "," << lowSphere->pos.z << ")\n\n";
     }
-    sphere->vel += h_ * sphere->acc;
 
     sphere->colliders_.clear();
   }
 }
-static float get_rand(float low=-.5f, float high = .5f)
-{
-  float r3 = low + static_cast < float > (rand()) / (static_cast < float > (RAND_MAX / (high - low)));
 
-  return r3;
+void Simulator::integrate_boxes(float h)
+{
+  for (auto box : boxes_)
+  {
+    glm::vec3 acc(0.f);
+
+    for (auto f : g_forces_)
+    {
+      acc += f.second / box->mass;
+    }
+
+    // internal forces calculations
+    glm::vec3 dampening_force = -dampening_ * box->vel;
+    //box->center += h * box->vel;
+    box->vel += h * acc;
+
+    box->orientation += 0.5f * glm::quat(0.f, box->angular_vel) * box->orientation * h;
+    box->orientation = glm::normalize(box->orientation);
+  }
 }
+
 void Simulator::init()
 {
   engine_.set_sphere_radius(sphere_rad_);
   engine_.init();
-  
-  std::vector<size_t> spheres_indices;
+
+  std::vector<size_t> elem_indices;
   glm::vec3 dims = col_solver_->dims();
   float w = dims.x / 2.f;
   float h = dims.y / 2.f;
   float d = dims.z / 2.f;
   const bool small_start = false;
 
+  // add spheres
   for (unsigned int i = 0; i < spheres_n_; ++i)
   {
     if (small_start)
-      spheres_indices.push_back(engine_.add_sphere(get_rand(), get_rand(), get_rand()));
+      elem_indices.push_back(engine_.add_sphere(get_rand(), get_rand(), get_rand()));
     else
-      spheres_indices.push_back(engine_.add_sphere(get_rand(-w, w), get_rand(-h, h), get_rand(-d, d)));
+      elem_indices.push_back(engine_.add_sphere(get_rand(-w, w), get_rand(-h, h), get_rand(-d, d)));
   }
 
-  for (size_t ind : spheres_indices)
+  for (size_t ind : elem_indices)
   {
     Sphere *s = engine_.get_sphere(ind);
     s->vel.x = get_rand(-.2f, .2f);
     s->vel.y = get_rand(-.2f, .2f);
     s->vel.z = get_rand(-.2f, .2f);
     spheres_.push_back(s);
+  }
+
+  // add boxes
+  elem_indices.clear();
+  elem_indices.push_back(engine_.add_box(glm::vec3(0.f, 0.f, 2.f), glm::vec3(1.f, 1.f, 1.f)));
+  elem_indices.push_back(engine_.add_box(glm::vec3(0.f, 0.f, 4.f), glm::vec3(1.f, 2.f, 1.f)));
+  for (size_t ind : elem_indices)
+  {
+    Box *s = engine_.get_box(ind);
+    s->vel.x = get_rand(-.2f, .2f);
+    s->vel.y = get_rand(-.2f, .2f);
+    s->vel.z = get_rand(-.2f, .2f);
+    boxes_.push_back(s);
   }
 
   add_global_force("gravity", glm::vec3(0.f, -.9f, 0.f));

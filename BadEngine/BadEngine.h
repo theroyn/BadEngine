@@ -42,11 +42,11 @@ public:
   float get_sphere_radius(float rad) const { return sphere_rad_; }
   void set_sphere_pos(int id, float x, float y, float z);
   void set_sphere_velocity(int id, float x, float y, float z);
-  void set_sphere_acc(int id, float x, float y, float z);
   size_t add_sphere(float x, float y, float z);
   void set_world_dims(glm::vec3 dims);
 
   size_t add_box(const glm::vec3 &center, const glm::vec3 &dims);
+  Box *get_box(size_t id) const;
 
 private:
   void demo_add_spheres();
