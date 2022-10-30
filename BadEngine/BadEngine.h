@@ -57,6 +57,9 @@ private:
   void draw_boxes_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans);
   void init_cube_program();
   void draw_cube_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans);
+  void init_post_program();
+  void draw_post_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans);
+  void init_fb();
 
 private:
   static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
@@ -84,6 +87,12 @@ private:
   GLuint cube_vao_[1];
   glm::vec3 cube_scale_;
   SimpleBox cube_;
+
+  Shader post_shader_programme_;
+  GLuint post_rendered_texture_;
+  GLuint post_quad_vertexbuffer;
+  GLuint post_vao_[1];
+
   std::function<void(int, int, int, int)> logic_key_handler_cb_;
   const GLuint screen_width_ = 1920;
   const GLuint screen_height_ = 1080;

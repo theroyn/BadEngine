@@ -1,6 +1,6 @@
 #version 400
 
-out vec4 frag_colour;
+layout(location = 0) out vec3 frag_colour;
 
 uniform vec3 eye_pos;
 vec3 licht=vec3(1.2, 3.0, 2.0);
@@ -34,5 +34,6 @@ void main()
   //frag_colour = frag_view_pos;
   //frag_colour = vec4(0., 0., .2, 1.);
   //frag_colour = vec4(frag_view_normal, 1.);
-    frag_colour=vec4(res_col, 1.);
+    // frag_colour=vec4(res_col, 1.);
+    frag_colour=res_col;
 }

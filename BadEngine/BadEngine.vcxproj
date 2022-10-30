@@ -215,6 +215,8 @@ xcopy "$(ProjectDir)*.obj" "$(SolutionDir)CFD" /Y /I</Command>
     <None Include="containing_cube_fs.glsl" />
     <None Include="containing_cube_vs.glsl" />
     <None Include="packages.config" />
+    <None Include="Passthrough_vs.glsl" />
+    <None Include="WobblyTexture_fs.glsl" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BadEngine.h" />

@@ -275,4 +275,4 @@ __pycache__/
 *.exe
 /CFD/IEShims.dll
 /CFD/tbb*.dll
-
+/CFD/*.glsl

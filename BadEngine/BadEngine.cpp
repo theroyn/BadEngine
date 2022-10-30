@@ -54,6 +54,38 @@ BadEngine::~BadEngine()
   spheres_.erase(spheres_.begin(), spheres_.end());
 }
 
+void BadEngine::init_post_program()
+{
+  // The fullscreen quad's FBO
+  static const GLfloat g_quad_vertex_buffer_data[] = {
+    -1.0f,
+    -1.0f,
+    0.0f,
+    1.0f,
+    -1.0f,
+    0.0f,
+    -1.0f,
+    1.0f,
+    0.0f,
+    -1.0f,
+    1.0f,
+    0.0f,
+    1.0f,
+    -1.0f,
+    0.0f,
+    1.0f,
+    1.0f,
+    0.0f,
+  };
+
+  GLuint post_quad_vertexbuffer;
+  glGenBuffers(1, &post_quad_vertexbuffer);
+  glBindBuffer(GL_ARRAY_BUFFER, post_quad_vertexbuffer);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(g_quad_vertex_buffer_data), g_quad_vertex_buffer_data, GL_STATIC_DRAW);
+
+  post_shader_programme_ = Shader("Passthrough_vs.glsl", "WobblyTexture_fs.glsl");
+}
+
 void BadEngine::init_sphere_program()
 {
   parser_.parse("SphereRad1.obj");
@@ -96,6 +128,8 @@ void BadEngine::init_sphere_program()
     msg_ = VMSG_TO_STR(msgv);
     status_ = sphere_shader_programme_.get_error() ? R_FAILURE : R_SUCCESS;
   }
+
+  glBindVertexArray(0);
 }
 
 void BadEngine::init_boxes_program()
@@ -130,6 +164,8 @@ void BadEngine::init_boxes_program()
     msg_ = VMSG_TO_STR(msgv);
     status_ = false;
   }
+
+  glBindVertexArray(0);
 }
 
 void BadEngine::init_cube_program()
@@ -164,6 +200,72 @@ void BadEngine::init_cube_program()
     msg_ = VMSG_TO_STR(msgv);
     status_ = cube_shader_programme_.get_error() ? R_FAILURE : R_SUCCESS;
   }
+
+  glBindVertexArray(0);
+}
+
+static GLuint FramebufferName = 0;
+void BadEngine::init_fb()
+{
+  glGenVertexArrays(1, post_vao_);
+  glBindVertexArray(post_vao_[0]);
+  // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
+
+  glGenFramebuffers(1, &FramebufferName);
+  glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
+
+  // The texture we're going to render to
+  glGenTextures(1, &post_rendered_texture_);
+
+  // "Bind" the newly created texture : all future texture functions will modify this texture
+  glBindTexture(GL_TEXTURE_2D, post_rendered_texture_);
+
+  // Give an empty image to OpenGL ( the last "0" )
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, screen_width_, screen_height_, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+
+  // Poor filtering. Needed !
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+  // The depth buffer
+  GLuint depthrenderbuffer;
+  glGenRenderbuffers(1, &depthrenderbuffer);
+  glBindRenderbuffer(GL_RENDERBUFFER, depthrenderbuffer);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, screen_width_, screen_height_);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthrenderbuffer);
+
+  //// Alternative : Depth texture. Slower, but you can sample it later in your shader
+  //GLuint depthTexture;
+  //glGenTextures(1, &depthTexture);
+  //glBindTexture(GL_TEXTURE_2D, depthTexture);
+  //glTexImage2D(GL_TEXTURE_2D, 0,GL_DEPTH_COMPONENT24, 1024, 768, 0,GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+  //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+  // Set "post_rendered_texture_" as our colour attachement #0
+  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, post_rendered_texture_, 0);
+
+  // Set the list of draw buffers.
+  GLenum DrawBuffers[1] = { GL_COLOR_ATTACHMENT0 };
+  glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
+
+  // Always check that our framebuffer is ok
+  if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+  {
+    status_ = R_FAILURE;
+    msg_ = "Cannot create opengl framebuffer.";
+    throw std::runtime_error(msg_);
+  }
+
+  // Render to our framebuffer
+  glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
+  glViewport(0, 0, 1024, 768); // Render on the whole framebuffer, complete from the lower left corner to the upper right
+
+  glBindVertexArray(0);
 }
 
 void BadEngine::init()
@@ -214,7 +316,7 @@ void BadEngine::init()
   //parser_.parse("TriangulatedSphere.obj");
   //demo_add_spheres();
   // parser_.parse("cube.obj");
-
+  init_fb();
   glEnable(GL_DEPTH_TEST);
   glClearColor(.7f, .8f, .5f, 1.f);
   // fix alignment for subsequent calls to glReadPixels().
@@ -246,6 +348,13 @@ void BadEngine::init()
   {
     throw std::runtime_error(msg_);
   }
+
+  init_post_program();
+
+  if (status_ != R_SUCCESS)
+  {
+    throw std::runtime_error(msg_);
+  }
 }
 
 void BadEngine::draw_sphere_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans)
@@ -270,6 +379,8 @@ void BadEngine::draw_sphere_program(const glm::mat4 &view_trans, const glm::mat4
     sphere_shader_programme_.set_mat4("model", model_trans);
     glDrawElements(GL_TRIANGLES, (GLsizei)sphere_count_, GL_UNSIGNED_INT, NULL);
   }
+
+  glBindVertexArray(0);
 }
 
 void BadEngine::draw_boxes_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans)
@@ -287,6 +398,8 @@ void BadEngine::draw_boxes_program(const glm::mat4 &view_trans, const glm::mat4 
     box_shader_programme_.set_mat4("model", box->trans);
     glDrawArrays(GL_TRIANGLES, 0, (GLsizei)box_count_);
   }
+
+  glBindVertexArray(0);
 }
 
 void BadEngine::draw_cube_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans)
@@ -308,10 +421,52 @@ void BadEngine::draw_cube_program(const glm::mat4 &view_trans, const glm::mat4 &
                  sizeof(normalized_cube_indices) / sizeof(normalized_cube_indices[0]),
                  GL_UNSIGNED_INT,
                  NULL);
+
+  glBindVertexArray(0);
+}
+
+void BadEngine::draw_post_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans)
+{
+  glBindVertexArray(post_vao_[0]);
+  // Render on the whole framebuffer, complete from the lower left corner to the upper right
+  glViewport(0, 0, screen_width_, screen_height_);
+
+  // Clear the screen
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+  // Use our shader
+  post_shader_programme_.use();
+
+  // Bind our texture in Texture Unit 0
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, post_rendered_texture_);
+  // Set our "post_rendered_texture_" sampler to use Texture Unit 0
+  post_shader_programme_.set_int("renderedTexture", 0);
+  post_shader_programme_.set_float("time", (float)(glfwGetTime() * 10.0f));
+
+  // 1rst attribute buffer : vertices
+  glEnableVertexAttribArray(0);
+  glBindBuffer(GL_ARRAY_BUFFER, post_quad_vertexbuffer);
+  glVertexAttribPointer(
+      0,        // attribute 0. No particular reason for 0, but must match the layout in the shader.
+      3,        // size
+      GL_FLOAT, // type
+      GL_FALSE, // normalized?
+      0,        // stride
+      (void *)0 // array buffer offset
+  );
+
+  // Draw the triangles !
+  glDrawArrays(GL_TRIANGLES, 0, 6); // 2*3 indices starting at 0 -> 2 triangles
+
+  glDisableVertexAttribArray(0);
+
+  glBindVertexArray(0);
 }
 
 void BadEngine::draw()
 {
+  //glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   glm::mat4 view_trans = cam_->get_view();
@@ -322,6 +477,10 @@ void BadEngine::draw()
   draw_boxes_program(view_trans, projection_trans);
 
   draw_cube_program(view_trans, projection_trans);
+
+  //glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+  draw_post_program(view_trans, projection_trans);
 
   glfwSwapBuffers(window_);
   glfwPollEvents();

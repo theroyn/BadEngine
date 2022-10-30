@@ -57,6 +57,12 @@
     <None Include="containing_cube_vs.glsl">
       <Filter>shaders</Filter>
     </None>
+    <None Include="Passthrough_vs.glsl">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="WobblyTexture_fs.glsl">
+      <Filter>shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="utils.h">
