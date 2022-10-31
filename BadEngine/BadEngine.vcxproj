@@ -224,6 +224,7 @@ xcopy "$(ProjectDir)*.obj" "$(SolutionDir)CFD" /Y /I</Command>
     <ClInclude Include="coords.h" />
     <ClInclude Include="FileCopier.h" />
     <ClInclude Include="gl_incs.h" />
+    <ClInclude Include="Line.h" />
     <ClInclude Include="OBJParser.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Sphere.h" />

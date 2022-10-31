@@ -8,6 +8,7 @@
 #include "Shader.h"
 #include "Sphere.h"
 #include "Box.h"
+#include "Line.h"
 #include <functional>
 
 
@@ -47,6 +48,8 @@ public:
 
   size_t add_box(const glm::vec3 &center, const glm::vec3 &dims);
   Box *get_box(size_t id) const;
+  size_t add_line(const glm::vec3 &start, const glm::vec3 &end);
+  Line *get_line(size_t id) const;
 
 private:
   void demo_add_spheres();
@@ -57,6 +60,8 @@ private:
   void draw_boxes_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans);
   void init_cube_program();
   void draw_cube_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans);
+  void init_lines_program();
+  void draw_lines_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans);
 
 private:
   static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
@@ -78,6 +83,9 @@ private:
   Shader box_shader_programme_;
   GLuint box_vao_ = 0;
   size_t box_count_ = 0;
+  std::vector<Line *> lines_;
+  Shader line_shader_programme_;
+  GLuint line_vao_ = 0;
 
   Shader cube_shader_programme_;
   GLuint cube_vbos_[2];

@@ -131,6 +131,44 @@ void BadEngine::init_boxes_program()
   }
 }
 
+void BadEngine::init_lines_program()
+{
+  // normalized coordinated of 0-->1 vector
+  static constexpr float VERTICES[] = {
+    0.f, //s.x
+    0.f, //s.y
+    0.f, //s.z
+    0.577350259f, // e.x
+    0.577350259f, // e.y
+    0.577350259f  // e.z
+  };
+
+  glGenVertexArrays(1, &line_vao_);
+  glBindVertexArray(line_vao_);
+
+  GLuint line_vbo;
+
+  glGenBuffers(1, &line_vbo);
+  glBindBuffer(GL_ARRAY_BUFFER, line_vbo);
+  glBufferData(GL_ARRAY_BUFFER,
+               sizeof(VERTICES),
+               VERTICES,
+               GL_STATIC_DRAW);
+
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), reinterpret_cast<void *>(0));
+
+  glEnableVertexAttribArray(0);
+
+  line_shader_programme_ = Shader("base_vs.glsl", "base_fs.glsl");
+
+  if (line_shader_programme_.get_error())
+  {
+    auto msgv = line_shader_programme_.get_message();
+    msg_ = VMSG_TO_STR(msgv);
+    status_ = false;
+  }
+}
+
 void BadEngine::init_cube_program()
 {
   // load containing cube
@@ -238,6 +276,13 @@ void BadEngine::init()
     throw std::runtime_error(msg_);
   }
 
+  init_lines_program();
+
+  if (status_ != R_SUCCESS)
+  {
+    throw std::runtime_error(msg_);
+  }
+
   init_cube_program();
 
   if (status_ != R_SUCCESS)
@@ -311,6 +356,41 @@ void BadEngine::draw_boxes_program(const glm::mat4 &view_trans, const glm::mat4 
   }
 }
 
+void BadEngine::draw_lines_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans)
+{
+  glLineWidth(3.f);
+
+  line_shader_programme_.use();
+  glBindVertexArray(line_vao_);
+
+  line_shader_programme_.set_mat4("view", view_trans);
+  line_shader_programme_.set_mat4("projection", projection_trans);
+  line_shader_programme_.set_vec3("eye_pos", cam_->get_pos());
+
+  for (Line *line : lines_)
+  {
+    glm::vec3 v2 = line->end - line->start;
+    glm::vec3 v2n = glm::normalize(v2);
+    glm::vec3 v1 = glm::normalize(glm::vec3(1.f, 1.f, 1.f) - glm::vec3(0.f, 0.f, 0.f));
+    float v2_length = glm::l2Norm(v2);
+
+    glm::mat4 model_trans(1.f);
+    float theta = acos(dot(v1, v2n));
+    glm::vec3 axis = glm::normalize(glm::cross(v1, v2n));
+
+    model_trans = glm::translate(model_trans,
+                                 glm::vec3(line->start));
+    model_trans = glm::rotate(model_trans, theta, axis);
+    model_trans = glm::scale(model_trans, glm::vec3(v2_length));
+
+    line_shader_programme_.set_mat4("model", model_trans);
+
+    glDrawArrays(GL_LINES, 0, (GLsizei)6);
+  }
+
+  glLineWidth(1.f);
+}
+
 void BadEngine::draw_cube_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans)
 {
   cube_shader_programme_.use();
@@ -344,6 +424,8 @@ void BadEngine::draw()
   draw_boxes_program(view_trans, projection_trans);
 
   draw_cube_program(view_trans, projection_trans);
+
+  draw_lines_program(view_trans, projection_trans);
 
   glfwSwapBuffers(window_);
   glfwPollEvents();
@@ -467,6 +549,17 @@ size_t BadEngine::add_box(const glm::vec3 &center, const glm::vec3 &dims)
 {
   boxes_.push_back(new Box(center, dims));
   return boxes_.size() - 1;
+}
+
+size_t BadEngine::add_line(const glm::vec3 &start, const glm::vec3 &end)
+{
+  lines_.push_back(new Line(start, end));
+  return lines_.size() - 1;
+}
+
+Line *BadEngine::get_line(size_t id) const
+{
+  return lines_.at(id);
 }
 
 //#define APPLICATION_MODE
