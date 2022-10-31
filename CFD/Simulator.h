@@ -3,6 +3,7 @@
 #include "gl_incs.h"
 #include "BadEngine.h"
 #include "Sphere.h"
+#include "Line.h"
 #include "CollisionSolver.h"
 
 #include <vector>
@@ -64,4 +65,5 @@ private:
   reactphysics3d::PhysicsWorld *world_ = nullptr;
   CollisionOp collision_op_;
   std::unordered_map<size_t, reactphysics3d::CollisionBody *> bodies_;
+  Line *debug_line_ = nullptr;
 };

@@ -135,9 +135,9 @@ void BadEngine::init_lines_program()
 {
   // normalized coordinated of 0-->1 vector
   static constexpr float VERTICES[] = {
-    0.f, //s.x
-    0.f, //s.y
-    0.f, //s.z
+    0.f,          //s.x
+    0.f,          //s.y
+    0.f,          //s.z
     0.577350259f, // e.x
     0.577350259f, // e.y
     0.577350259f  // e.z

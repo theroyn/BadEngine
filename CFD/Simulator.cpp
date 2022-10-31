@@ -29,24 +29,25 @@ Simulator::Simulator(unsigned int spheres_n) : sphere_coll_alg_(sphere_coll_alg:
 void Simulator::CollisionOp::onContact(const CallbackData &callbackData)
 {
   uint32_t contact_pairs_num = callbackData.getNbContactPairs();
-  if (callbackData.getContactPair(0).getEventType() == reactphysics3d::CollisionCallback::ContactPair::EventType::ContactStart)
-  {
 
-    std::cout << "\n**********************************************\nSS CONTACT!!!!!!!(" << contact_pairs_num << ")("
-              << callbackData.getContactPair(0).getNbContactPoints() << ")\n**********************************************\n";
-    Box *box = reinterpret_cast<Box *>(callbackData.getContactPair(0).getBody1()->getUserData());
-    box->color = glm::vec3(.5f, .5f, .71f);
-    box = reinterpret_cast<Box *>(callbackData.getContactPair(0).getBody2()->getUserData());
-    box->color = glm::vec3(.8f, .5f, .41f);
-  }
-  else if (callbackData.getContactPair(0).getEventType() == reactphysics3d::CollisionCallback::ContactPair::EventType::ContactExit)
-  {
-    std::cout << "\n**********************************************\nEE CONTACT!!!!!!!(" << contact_pairs_num << ")\n**********************************************\n";
-    Box *box = reinterpret_cast<Box *>(callbackData.getContactPair(0).getBody1()->getUserData());
-    box->color = glm::vec3(1., .5, .71);
-  }
+
+  Box *box1 = reinterpret_cast<Box *>(callbackData.getContactPair(0).getBody1()->getUserData());
+  box1->color = glm::vec3(.5f, .5f, .71f);
+  Box *box2 = reinterpret_cast<Box *>(callbackData.getContactPair(0).getBody2()->getUserData());
+  box2->color = glm::vec3(.8f, .5f, .41f);
+
+
+
+  auto l_c1 = callbackData.getContactPair(0).getContactPoint(0).getLocalPointOnCollider1();
+  auto c1 = callbackData.getContactPair(0).getBody1()->getWorldPoint(l_c1);
   // body1 --> body2 normal
-  //callbackData.getContactPair(0).getContactPoint(0).getWorldNormal();
+  auto n = callbackData.getContactPair(0).getContactPoint(0).getWorldNormal() + c1;
+  parent_->debug_line_->start.x = c1.x;
+  parent_->debug_line_->start.y = c1.y;
+  parent_->debug_line_->start.z = c1.z;
+  parent_->debug_line_->end.x = n.x;
+  parent_->debug_line_->end.y = n.y;
+  parent_->debug_line_->end.z = n.z;
 }
 
 void Simulator::handle_collisions()
@@ -55,6 +56,10 @@ void Simulator::handle_collisions()
   col_solver_->handle_collisions(spheres_);
 
   // Box collisions
+  for (Box *box : boxes_)
+  {
+    box->color = glm::vec3(1., .2, .11);
+  }
   world_->testCollision(collision_op_);
 }
 
@@ -212,7 +217,6 @@ void Simulator::integrate_boxes(float h)
   {
     reactphysics3d::CollisionBody *body = body_pair.second;
     Box *box = reinterpret_cast<Box *>(body->getUserData());
-    box->color = glm::vec3(1., .5, .71);
     reactphysics3d::Vector3 pos(box->center.x, box->center.y, box->center.z);
     reactphysics3d::Quaternion orientation(box->orientation.w, reactphysics3d::Vector3(box->orientation.x, box->orientation.y, box->orientation.z));
     reactphysics3d::Transform transform(pos, orientation);
@@ -280,6 +284,7 @@ void Simulator::init()
     reactphysics3d::BoxShape *shape = physics_common_.createBoxShape(halfExtents);
     reactphysics3d::Collider *collider = body->addCollider(shape, reactphysics3d::Transform::identity());
   }
+  debug_line_ = engine_.get_line(engine_.add_line(glm::vec3(1.f, 0.f, 0.f), glm::vec3(1.f, 1.f, -1.f)));
 }
 
 static void print_fps()
@@ -376,17 +381,14 @@ void Simulator::key_callback(int key, int scancode, int action, int mods)
       std::cout << "R press!!!\n";
       boxes_[0]->vel.z += .3f;
     }
-    else if (action == GLFW_RELEASE)
+  }
+  break;
+  case GLFW_KEY_E:
+  {
+    if (action == GLFW_PRESS)
     {
-      std::cout << "R release!!!\n";
-    }
-    else if (action == GLFW_REPEAT)
-    {
-      // ignored
-    }
-    else
-    {
-      std::cout << "R unknown action:" << action << "\n";
+      std::cout << "R press!!!\n";
+      boxes_[0]->vel.z -= .3f;
     }
   }
   break;
