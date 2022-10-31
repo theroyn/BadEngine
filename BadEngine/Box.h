@@ -12,7 +12,8 @@ struct Box
                                                         angular_vel(0.f, 0.f, 0.f),
                                                         mass(7.f),
                                                         dims(dims),
-                                                        elasticity(.9f)
+                                                        elasticity(.9f),
+                                                        color(1., .5, .71)
   {
     static constexpr float ANGLE = 0.f;
     float half_angle = 0.5f * (utility::PI * 0.f);
@@ -38,4 +39,5 @@ struct Box
   glm::mat3 IBody = glm::mat3(1.f), IBodyInv = glm::mat3(1.f);
   float elasticity;
   float mass;
+  glm::vec3 color;
 };

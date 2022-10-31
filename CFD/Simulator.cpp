@@ -4,26 +4,68 @@
 #include <time.h>   /* time */
 #include <glm/gtx/norm.hpp>
 #include <functional>
-
 #include <utils.h>
+
+static const glm::vec3 GRAVITY(0.f, -.9f, 0.f);
 
 Simulator::Simulator(unsigned int spheres_n) : sphere_coll_alg_(sphere_coll_alg::grid),
                                                base_h_(.03f),
                                                dampening_(.09f),
                                                spheres_n_(spheres_n),
                                                sphere_rad_(.1f),
-                                               engine_(std::bind(&Simulator::key_callback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4))
+                                               engine_(std::bind(&Simulator::key_callback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)),
+                                               collision_op_(this)
 {
   col_solver_ = SolverFactory::create(sphere_coll_alg_, sphere_rad_);
+
+  // Create the world settings
+  reactphysics3d::PhysicsWorld::WorldSettings settings;
+  settings.gravity = reactphysics3d::Vector3(GRAVITY.x, GRAVITY.y, GRAVITY.z);
+
+  // Create the physics world with your settings
+  world_ = physics_common_.createPhysicsWorld(settings);
+}
+
+void Simulator::CollisionOp::onContact(const CallbackData &callbackData)
+{
+  uint32_t contact_pairs_num = callbackData.getNbContactPairs();
+  if (callbackData.getContactPair(0).getEventType() == reactphysics3d::CollisionCallback::ContactPair::EventType::ContactStart)
+  {
+
+    std::cout << "\n**********************************************\nSS CONTACT!!!!!!!(" << contact_pairs_num << ")("
+              << callbackData.getContactPair(0).getNbContactPoints() << ")\n**********************************************\n";
+    Box *box = reinterpret_cast<Box *>(callbackData.getContactPair(0).getBody1()->getUserData());
+    box->color = glm::vec3(.5f, .5f, .71f);
+    box = reinterpret_cast<Box *>(callbackData.getContactPair(0).getBody2()->getUserData());
+    box->color = glm::vec3(.8f, .5f, .41f);
+  }
+  else if (callbackData.getContactPair(0).getEventType() == reactphysics3d::CollisionCallback::ContactPair::EventType::ContactExit)
+  {
+    std::cout << "\n**********************************************\nEE CONTACT!!!!!!!(" << contact_pairs_num << ")\n**********************************************\n";
+    Box *box = reinterpret_cast<Box *>(callbackData.getContactPair(0).getBody1()->getUserData());
+    box->color = glm::vec3(1., .5, .71);
+  }
+  // body1 --> body2 normal
+  //callbackData.getContactPair(0).getContactPoint(0).getWorldNormal();
 }
 
 void Simulator::handle_collisions()
 {
+  // Sphere collisions
   col_solver_->handle_collisions(spheres_);
+
+  // Box collisions
+  world_->testCollision(collision_op_);
 }
 
 Simulator::~Simulator()
 {
+  for (auto &body_pair : bodies_)
+  {
+    reactphysics3d::CollisionBody *body = body_pair.second;
+    world_->destroyCollisionBody(body);
+  }
+  physics_common_.destroyPhysicsWorld(world_);
 }
 
 void Simulator::add_global_force(const std::string &name, glm::vec3 f)
@@ -92,11 +134,11 @@ static float get_rand(float low = -.5f, float high = .5f)
 
 void Simulator::integrate_spheres(float h)
 {
-  for (auto sphere : spheres_)
+  for (Sphere *sphere : spheres_)
   {
     glm::vec3 acc(0.f);
 
-    for (auto f : g_forces_)
+    for (const auto &f : g_forces_)
     {
       acc += f.second / sphere->mass;
     }
@@ -136,7 +178,7 @@ void Simulator::integrate_boxes(float h)
 
     for (auto f : g_forces_)
     {
-      acc += f.second / box->mass;
+      //acc += f.second / box->mass;
     }
     for (auto f : g_torques_)
     {
@@ -150,7 +192,7 @@ void Simulator::integrate_boxes(float h)
     glm::vec3 dampening_torque = -dampening_ * box->angular_vel;
     torque += dampening_torque / box->mass;
 
-    //box->center += h * box->vel;
+    box->center += h * box->vel;
     box->vel += h * acc;
 
     glm::mat3 R = glm::toMat3(box->orientation);
@@ -163,6 +205,19 @@ void Simulator::integrate_boxes(float h)
 
     box->orientation += 0.5f * glm::quat(0.f, box->angular_vel) * box->orientation * h;
     box->orientation = glm::normalize(box->orientation);
+  }
+
+  // update reactphysics3d world
+  for (auto &body_pair : bodies_)
+  {
+    reactphysics3d::CollisionBody *body = body_pair.second;
+    Box *box = reinterpret_cast<Box *>(body->getUserData());
+    box->color = glm::vec3(1., .5, .71);
+    reactphysics3d::Vector3 pos(box->center.x, box->center.y, box->center.z);
+    reactphysics3d::Quaternion orientation(box->orientation.w, reactphysics3d::Vector3(box->orientation.x, box->orientation.y, box->orientation.z));
+    reactphysics3d::Transform transform(pos, orientation);
+
+    body->setTransform(transform);
   }
 }
 
@@ -203,20 +258,33 @@ void Simulator::init()
   for (size_t ind : elem_indices)
   {
     Box *s = engine_.get_box(ind);
-    s->vel.x = get_rand(-.2f, .2f);
-    s->vel.y = get_rand(-.2f, .2f);
-    s->vel.z = get_rand(-.2f, .2f);
     boxes_.push_back(s);
   }
 
-  add_global_force("gravity", glm::vec3(0.f, -.9f, 0.f));
+  add_global_force("gravity", GRAVITY);
 
   engine_.set_world_dims(col_solver_->dims());
+
+  for (size_t i = 0; i < boxes_.size(); ++i)
+  {
+    Box *box = boxes_[i];
+    reactphysics3d::Vector3 pos(box->center.x, box->center.y, box->center.z);
+    reactphysics3d::Quaternion orientation(box->orientation.w, reactphysics3d::Vector3(box->orientation.x, box->orientation.y, box->orientation.z));
+    reactphysics3d::Transform transform(pos, orientation);
+
+    reactphysics3d::CollisionBody *body = world_->createCollisionBody(transform);
+    body->setUserData(box);
+    bodies_.emplace(i, body);
+    const reactphysics3d::Vector3 halfExtents(box->dims.x * .5f, box->dims.y * .5f, box->dims.z * .5f);
+
+    reactphysics3d::BoxShape *shape = physics_common_.createBoxShape(halfExtents);
+    reactphysics3d::Collider *collider = body->addCollider(shape, reactphysics3d::Transform::identity());
+  }
 }
 
-namespace cr = std::chrono;
 static void print_fps()
 {
+  namespace cr = std::chrono;
   static size_t frame_cnt = 0;
   frame_cnt++;
   static auto last_print = cr::system_clock::now().time_since_epoch();
@@ -298,6 +366,27 @@ void Simulator::key_callback(int key, int scancode, int action, int mods)
     else
     {
       std::cout << "P unknown action:" << action << "\n";
+    }
+  }
+  break;
+  case GLFW_KEY_R:
+  {
+    if (action == GLFW_PRESS)
+    {
+      std::cout << "R press!!!\n";
+      boxes_[0]->vel.z += .3f;
+    }
+    else if (action == GLFW_RELEASE)
+    {
+      std::cout << "R release!!!\n";
+    }
+    else if (action == GLFW_REPEAT)
+    {
+      // ignored
+    }
+    else
+    {
+      std::cout << "R unknown action:" << action << "\n";
     }
   }
   break;

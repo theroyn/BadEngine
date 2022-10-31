@@ -3,6 +3,7 @@
 out vec4 frag_colour;
 
 uniform vec3 eye_pos;
+uniform vec3 object_color;
 vec3 licht=vec3(1.2, 3.0, 2.0);
 
 in vec3 frag_view_normal;
@@ -13,7 +14,6 @@ void main()
 {
     // ambience
     vec3 light_color=vec3(1., 1., 1.);
-    vec3 object_color=vec3(1., .5, .31);
     vec3 normal=normalize(frag_normal);
 
     float ambience_strength=0.1;
