@@ -3,6 +3,7 @@
 out vec4 frag_colour;
 
 uniform vec3 eye_pos;
+uniform vec3 object_color;
 vec3 licht=vec3(1.2, 3.0, 2.0);
 
 in vec3 frag_view_normal;
@@ -13,7 +14,6 @@ void main()
 {
     // ambience
     vec3 light_color=vec3(1., 1., 1.);
-    vec3 object_color=vec3(1., .5, .31);
     vec3 normal=normalize(frag_normal);
 
     float ambience_strength=0.1;
@@ -31,8 +31,5 @@ void main()
     vec3 specular=light_color * specular_value * specular_param;
     vec3 res_col=(ambience + diffuse + specular) * object_color;
 
-  //frag_colour = frag_view_pos;
-  //frag_colour = vec4(0., 0., .2, 1.);
-  //frag_colour = vec4(frag_view_normal, 1.);
     frag_colour=vec4(res_col, 1.);
 }

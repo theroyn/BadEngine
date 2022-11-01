@@ -45,6 +45,8 @@ public:
   void set_sphere_velocity(int id, float x, float y, float z);
   size_t add_sphere(float x, float y, float z);
   void set_world_dims(glm::vec3 dims);
+  glm::vec3 get_world_center() const { return cube_.pos; }
+  glm::vec3 get_world_dims() const { return cube_scale_; }
 
   size_t add_box(const glm::vec3 &center, const glm::vec3 &dims);
   Box *get_box(size_t id) const;

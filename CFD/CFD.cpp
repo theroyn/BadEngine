@@ -1,12 +1,12 @@
 #include <iostream>
-//#include <BadEngine.h>
+
 #include "Simulator.h"
 
 int main(int argc, char *argv[])
 {
   try
   {
-    unsigned int spheres_n = 3000;
+    unsigned int spheres_n = 90;
 
     if (argc == 2)
     {

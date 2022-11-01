@@ -135,9 +135,9 @@ void BadEngine::init_lines_program()
 {
   // normalized coordinated of 0-->1 vector
   static constexpr float VERTICES[] = {
-    0.f, //s.x
-    0.f, //s.y
-    0.f, //s.z
+    0.f,          //s.x
+    0.f,          //s.y
+    0.f,          //s.z
     0.577350259f, // e.x
     0.577350259f, // e.y
     0.577350259f  // e.z
@@ -301,6 +301,7 @@ void BadEngine::draw_sphere_program(const glm::mat4 &view_trans, const glm::mat4
   sphere_shader_programme_.set_mat4("view", view_trans);
   sphere_shader_programme_.set_mat4("projection", projection_trans);
   sphere_shader_programme_.set_vec3("eye_pos", cam_pos);
+  sphere_shader_programme_.set_vec3("object_color", glm::vec3(1., .5, .31));
 
   for (Sphere *sphere : spheres_)
   {
@@ -352,6 +353,7 @@ void BadEngine::draw_boxes_program(const glm::mat4 &view_trans, const glm::mat4 
     model_trans *= glm::toMat4(box->orientation);
     model_trans = glm::scale(model_trans, glm::vec3(box->dims));
     box_shader_programme_.set_mat4("model", model_trans);
+    box_shader_programme_.set_vec3("object_color", box->color);
     glDrawArrays(GL_TRIANGLES, 0, (GLsizei)box_count_);
   }
 }
@@ -384,6 +386,7 @@ void BadEngine::draw_lines_program(const glm::mat4 &view_trans, const glm::mat4 
     model_trans = glm::scale(model_trans, glm::vec3(v2_length));
 
     line_shader_programme_.set_mat4("model", model_trans);
+    line_shader_programme_.set_vec3("object_color", line->color);
 
     glDrawArrays(GL_LINES, 0, (GLsizei)6);
   }
