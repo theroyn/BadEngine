@@ -386,6 +386,7 @@ void BadEngine::draw_lines_program(const glm::mat4 &view_trans, const glm::mat4 
     model_trans = glm::scale(model_trans, glm::vec3(v2_length));
 
     line_shader_programme_.set_mat4("model", model_trans);
+    line_shader_programme_.set_vec3("object_color", line->color);
 
     glDrawArrays(GL_LINES, 0, (GLsizei)6);
   }

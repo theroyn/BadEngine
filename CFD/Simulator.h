@@ -5,6 +5,7 @@
 #include "Sphere.h"
 #include "Line.h"
 #include "CollisionSolver.h"
+#include "ImpulseCollisionSolver.h"
 
 #include <vector>
 #include <map>
@@ -38,18 +39,7 @@ private:
   void key_callback(int key, int scancode, int action, int mods);
 
 private:
-  class CollisionOp : public reactphysics3d::CollisionCallback
-  {
-  public:
-    CollisionOp(Simulator *parent) : parent_(parent) {}
-    virtual void onContact(const CallbackData &callbackData) override;
-
-  private:
-    Simulator *parent_;
-  };
-
-private:
-  float dampening_;
+  float damping_;
   const float base_h_;
   unsigned int spheres_n_;
   float sphere_rad_;
@@ -63,7 +53,7 @@ private:
   const sphere_coll_alg sphere_coll_alg_;
   reactphysics3d::PhysicsCommon physics_common_;
   reactphysics3d::PhysicsWorld *world_ = nullptr;
-  CollisionOp collision_op_;
+  ImpulseCollisionSolver impulse_solver_;
   std::unordered_map<size_t, reactphysics3d::CollisionBody *> bodies_;
   Line *debug_line_ = nullptr;
 };
