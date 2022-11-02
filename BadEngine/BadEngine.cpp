@@ -203,6 +203,40 @@ void BadEngine::init_cube_program()
   }
 }
 
+void BadEngine::init_arrows_program()
+{
+  arrow_count_ = sizeof(arrow_coords_w_normals_n_textures) / sizeof(arrow_coords_w_normals_n_textures[0]);
+
+  glGenVertexArrays(1, &arrow_vao_);
+  glBindVertexArray(arrow_vao_);
+
+  GLuint arrow_vbo;
+
+  glGenBuffers(1, &arrow_vbo);
+  glBindBuffer(GL_ARRAY_BUFFER, arrow_vbo);
+  glBufferData(GL_ARRAY_BUFFER,
+               sizeof(arrow_coords_w_normals_n_textures),
+               arrow_coords_w_normals_n_textures,
+               GL_STATIC_DRAW);
+
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), reinterpret_cast<void *>(0));
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), reinterpret_cast<void *>(0 + 3 * sizeof(GLfloat)));
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), reinterpret_cast<void *>(0 + 6 * sizeof(GLfloat)));
+
+  glEnableVertexAttribArray(0);
+  glEnableVertexAttribArray(1);
+  glEnableVertexAttribArray(2);
+
+  arrow_shader_programme_ = Shader("base_vs.glsl", "base_fs.glsl");
+
+  if (arrow_shader_programme_.get_error())
+  {
+    auto msgv = arrow_shader_programme_.get_message();
+    msg_ = VMSG_TO_STR(msgv);
+    status_ = false;
+  }
+}
+
 void BadEngine::init()
 {
   if (glfwInit() == GL_FALSE)
@@ -284,6 +318,13 @@ void BadEngine::init()
   }
 
   init_cube_program();
+
+  if (status_ != R_SUCCESS)
+  {
+    throw std::runtime_error(msg_);
+  }
+
+  init_arrows_program();
 
   if (status_ != R_SUCCESS)
   {
@@ -415,6 +456,25 @@ void BadEngine::draw_cube_program(const glm::mat4 &view_trans, const glm::mat4 &
                  NULL);
 }
 
+void BadEngine::draw_arrows_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans)
+{
+  arrow_shader_programme_.use();
+  glBindVertexArray(arrow_vao_);
+
+  glm::vec3 cam_pos = cam_->get_pos();
+
+  arrow_shader_programme_.set_mat4("view", view_trans);
+  arrow_shader_programme_.set_mat4("projection", projection_trans);
+  arrow_shader_programme_.set_vec3("eye_pos", cam_pos);
+  glm::mat4 model_trans(1.f);
+  model_trans = glm::translate(model_trans,
+                               glm::vec3(0.f));
+  model_trans = glm::scale(model_trans, glm::vec3(1.f, 3.f, 1.f));
+  arrow_shader_programme_.set_mat4("model", model_trans);
+  arrow_shader_programme_.set_vec3("object_color", glm::vec3(0.f, 1.f, 0.f));
+  glDrawArrays(GL_TRIANGLES, 0, (GLsizei)arrow_count_);
+}
+
 void BadEngine::draw()
 {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -429,6 +489,8 @@ void BadEngine::draw()
   draw_cube_program(view_trans, projection_trans);
 
   draw_lines_program(view_trans, projection_trans);
+
+  draw_arrows_program(view_trans, projection_trans);
 
   glfwSwapBuffers(window_);
   glfwPollEvents();

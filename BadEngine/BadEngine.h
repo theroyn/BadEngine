@@ -64,6 +64,8 @@ private:
   void draw_cube_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans);
   void init_lines_program();
   void draw_lines_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans);
+  void init_arrows_program();
+  void draw_arrows_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans);
 
 private:
   static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
@@ -88,6 +90,10 @@ private:
   std::vector<Line *> lines_;
   Shader line_shader_programme_;
   GLuint line_vao_ = 0;
+
+  GLuint arrow_vao_ = 0;
+  size_t arrow_count_ = 0;
+  Shader arrow_shader_programme_;
 
   Shader cube_shader_programme_;
   GLuint cube_vbos_[2];
