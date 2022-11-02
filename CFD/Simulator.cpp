@@ -112,6 +112,64 @@ void Simulator::remove_global_torque(const std::string &name)
   }
 }
 
+static void projectile(Arrow *arrow)
+{
+  static std::once_flag of;
+  static double kin_start_time_ = glfwGetTime();
+  std::call_once(of, [&]()
+                 {
+                   float theta_start_deg = 45.f;
+                   float theta_start = theta_start_deg * utility::PI / 180.f;
+                   float s_start_deg = 180.f; // angle between x-z axii
+                   float s_start = s_start_deg * utility::PI / 180.f;
+                   float v0 = 3.f;
+                   float v0xz = v0 * cos(theta_start);
+                   float v0y = v0 * sin(theta_start);
+                   float v0x = v0xz * cos(s_start);
+                   float v0z = v0xz * sin(s_start);
+
+                   arrow->vel_start = glm::vec3(v0x, v0y, v0z);
+                   arrow->theta = theta_start;
+                   bool is_eq = (abs(glm::l2Norm(arrow->vel_start) - v0) < .0001f);
+
+                   // orientation
+                   glm::vec3 v = glm::normalize(arrow->vel_start);
+                   glm::vec3 unit = glm::normalize(glm::vec3(0.f, 1.f, 0.f) - glm::vec3(0.f, 0.f, 0.f));
+                   float theta = glm::dot(unit, v);
+                   glm::vec3 axis = glm::normalize(glm::cross(unit, v));
+
+                   float half_angle = 0.5f * theta;
+                   arrow->orientation.w = cos(half_angle);
+                   arrow->orientation.x = sin(half_angle) * 1.f;
+                   arrow->orientation.y = sin(half_angle) * 0.f;
+                   arrow->orientation.z = sin(half_angle) * 0.f;
+                   arrow->orientation = glm::normalize(arrow->orientation);
+                 });
+
+
+  double t = glfwGetTime();
+  float delta = static_cast<float>(t - kin_start_time_) * 3.f;
+
+  glm::vec3 g = GRAVITY;
+  glm::vec3 curr_v = arrow->vel_start + delta * g;
+  //  accurate because acceleration is constant
+  arrow->pos_current = arrow->pos_start + delta * arrow->vel_start + 0.5f * delta * delta * g;
+  arrow->orient(curr_v);
+  float tmax = arrow->vel_start.y / (-g.y);
+  bool is_tmax = (abs(delta - tmax) < .01f);
+  if (is_tmax)
+  {
+    std::cout << "\n************************************\n";
+  }
+}
+
+void Simulator::kinematics()
+{
+  static Arrow *arrow_proj = engine_.get_arrow(engine_.add_arrow(glm::vec3(0.f, 0.f, 0.f), glm::vec3(.5f, 1.f, .5f)));
+
+  projectile(arrow_proj);
+}
+
 void Simulator::integrate()
 {
   static bool init = true;
@@ -346,6 +404,9 @@ void Simulator::run()
     handle_collisions();
 
     integrate();
+
+    kinematics();
+
     print_fps();
   }
 }

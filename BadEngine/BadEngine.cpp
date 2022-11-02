@@ -466,13 +466,19 @@ void BadEngine::draw_arrows_program(const glm::mat4 &view_trans, const glm::mat4
   arrow_shader_programme_.set_mat4("view", view_trans);
   arrow_shader_programme_.set_mat4("projection", projection_trans);
   arrow_shader_programme_.set_vec3("eye_pos", cam_pos);
-  glm::mat4 model_trans(1.f);
-  model_trans = glm::translate(model_trans,
-                               glm::vec3(0.f));
-  model_trans = glm::scale(model_trans, glm::vec3(1.f, 3.f, 1.f));
-  arrow_shader_programme_.set_mat4("model", model_trans);
-  arrow_shader_programme_.set_vec3("object_color", glm::vec3(0.f, 1.f, 0.f));
-  glDrawArrays(GL_TRIANGLES, 0, (GLsizei)arrow_count_);
+  for (Arrow *a : arrows_)
+  {
+    glm::mat4 model_trans(1.f);
+    model_trans = glm::translate(model_trans,
+                                 a->pos_current);
+    model_trans *= glm::toMat4(a->orientation);
+    model_trans = glm::scale(model_trans, a->dims);
+
+    arrow_shader_programme_.set_mat4("model", model_trans);
+    arrow_shader_programme_.set_vec3("object_color", glm::vec3(0.f, 1.f, 0.f));
+
+    glDrawArrays(GL_TRIANGLES, 0, (GLsizei)arrow_count_);
+  }
 }
 
 void BadEngine::draw()
@@ -625,6 +631,17 @@ size_t BadEngine::add_line(const glm::vec3 &start, const glm::vec3 &end)
 Line *BadEngine::get_line(size_t id) const
 {
   return lines_.at(id);
+}
+
+size_t BadEngine::add_arrow(const glm::vec3 &pos, const glm::vec3 &dims)
+{
+  arrows_.push_back(new Arrow(pos, dims));
+  return arrows_.size() - 1;
+}
+
+Arrow *BadEngine::get_arrow(size_t id) const
+{
+  return arrows_.at(id);
 }
 
 //#define APPLICATION_MODE

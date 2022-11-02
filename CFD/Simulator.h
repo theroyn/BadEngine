@@ -34,6 +34,7 @@ private:
   void integrate_boxes(float h);
   void handle_collisions();
   void handle_sphere_collisions_naive_alg();
+  void kinematics();
 
 private:
   void key_callback(int key, int scancode, int action, int mods);

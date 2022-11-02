@@ -8,6 +8,7 @@
 #include "Shader.h"
 #include "Sphere.h"
 #include "Box.h"
+#include "Arrow.h"
 #include "Line.h"
 #include <functional>
 
@@ -52,6 +53,8 @@ public:
   Box *get_box(size_t id) const;
   size_t add_line(const glm::vec3 &start, const glm::vec3 &end);
   Line *get_line(size_t id) const;
+  size_t add_arrow(const glm::vec3 &pos, const glm::vec3 &dims);
+  Arrow *get_arrow(size_t id) const;
 
 private:
   void demo_add_spheres();
@@ -91,6 +94,7 @@ private:
   Shader line_shader_programme_;
   GLuint line_vao_ = 0;
 
+  std::vector<Arrow *> arrows_;
   GLuint arrow_vao_ = 0;
   size_t arrow_count_ = 0;
   Shader arrow_shader_programme_;
