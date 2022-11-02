@@ -15,7 +15,7 @@
 class Simulator
 {
 public:
-  Simulator(unsigned int spheres_n);
+  Simulator(unsigned int spheres_n, unsigned int boxes_n);
   ~Simulator();
 
 public:
@@ -42,6 +42,7 @@ private:
   float damping_;
   const float base_h_;
   unsigned int spheres_n_;
+  unsigned int boxes_n_;
   float sphere_rad_;
   double last_time_ = -1.;
   BadEngine engine_;

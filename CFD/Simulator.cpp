@@ -8,13 +8,15 @@
 
 static const glm::vec3 GRAVITY(0.f, -.9f, 0.f);
 
-Simulator::Simulator(unsigned int spheres_n) : sphere_coll_alg_(sphere_coll_alg::grid),
-                                               base_h_(.03f),
-                                               damping_(.09f),
-                                               spheres_n_(spheres_n),
-                                               sphere_rad_(.1f),
-                                               engine_(std::bind(&Simulator::key_callback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)),
-                                               impulse_solver_(this)
+Simulator::Simulator(unsigned int spheres_n,
+                     unsigned int boxes_n) : sphere_coll_alg_(sphere_coll_alg::grid),
+                                             base_h_(.03f),
+                                             damping_(.09f),
+                                             spheres_n_(spheres_n),
+                                             boxes_n_(spheres_n),
+                                             sphere_rad_(.1f),
+                                             engine_(std::bind(&Simulator::key_callback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)),
+                                             impulse_solver_(this)
 {
   col_solver_ = SolverFactory::create(sphere_coll_alg_, sphere_rad_);
 
@@ -268,7 +270,7 @@ void Simulator::init()
 
   // add boxes
   elem_indices.clear();
-  for (unsigned int i = 0; i < 50; ++i)
+  for (unsigned int i = 0; i < boxes_n_; ++i)
   {
     elem_indices.push_back(engine_.add_box(glm::vec3(get_rand(-w, w), get_rand(-h, h), get_rand(-d, d)), glm::vec3(.4f, .4f, .4f)));
   }
