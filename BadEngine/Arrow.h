@@ -9,7 +9,8 @@ struct Arrow
   Arrow(const glm::vec3 &pos, const glm::vec3 &dims) : pos_start(pos),
                                                        pos_current(pos),
                                                        dims(dims),
-                                                       vel_start(0.f)
+                                                       vel_start(0.f),
+                                                       vel_current(0.f)
   {
     static constexpr float ANGLE = 0.f;
     float half_angle = 0.5f * (utility::PI * 0.f);
@@ -46,6 +47,7 @@ struct Arrow
   glm::vec3 pos_current;
   glm::vec3 dims;
   glm::vec3 vel_start;
+  glm::vec3 vel_current;
   float theta = 0.f;
   glm::quat orientation;
 };

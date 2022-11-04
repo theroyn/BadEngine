@@ -146,7 +146,6 @@ static void projectile(Arrow *arrow)
                    arrow->orientation = glm::normalize(arrow->orientation);
                  });
 
-
   double t = glfwGetTime();
   float delta = static_cast<float>(t - kin_start_time_) * 3.f;
 
@@ -163,11 +162,73 @@ static void projectile(Arrow *arrow)
   }
 }
 
+static void circle(Arrow *arrow)
+{
+  static std::once_flag of;
+  static double last_time = glfwGetTime();
+  // inputs
+  static float rad = 1.f;
+  static glm::vec3 p0(1.f, 0.f, 0.f);
+  static glm::vec3 v0(0.f, 1.f, 0.f);
+  std::call_once(of, [&]()
+                 {
+                   arrow->vel_start = arrow->vel_current = v0;
+                   arrow->pos_current = arrow->pos_start = p0;
+
+                   // orientation
+                   arrow->orient(p0);
+                 });
+  double t = glfwGetTime();
+  float delta = static_cast<float>(t - last_time) * 3.f;
+  last_time = t;
+
+  float v_length = glm::l2Norm(v0);
+  float ar = v_length * v_length / rad;
+
+  glm::vec3 a = glm::normalize(-arrow->pos_current) * ar;
+
+  arrow->vel_current += delta * a;
+  arrow->pos_current += delta * arrow->vel_current;
+  arrow->orient(a);
+}
+
+static void circle2(Arrow *arrow)
+{
+  static std::once_flag of;
+  static double last_time = glfwGetTime();
+  // inputs
+  static float rad = 1.f;
+  static glm::vec3 p0(1.f, 0.f, 0.f);
+  static glm::vec3 v0(0.f, 1.f, 0.f);
+  std::call_once(of, [&]()
+                 {
+                   arrow->vel_start = arrow->vel_current = v0;
+                   arrow->pos_current = arrow->pos_start = p0;
+
+                   // orientation
+                   arrow->orient(p0);
+                 });
+  double t = glfwGetTime();
+  float delta = static_cast<float>(t - last_time);
+
+  float v_length = glm::l2Norm(v0);
+  float ar = v_length * v_length / rad;
+
+  glm::vec3 a = glm::normalize(-arrow->pos_current) * ar;
+
+  arrow->vel_current += delta * a;
+  arrow->pos_current = rad * glm::vec3(cos(delta), sin(delta), 0.f);
+  delta * arrow->vel_current;
+  arrow->orient(glm::normalize(-arrow->pos_current));
+}
+
 void Simulator::kinematics()
 {
   static Arrow *arrow_proj = engine_.get_arrow(engine_.add_arrow(glm::vec3(0.f, 0.f, 0.f), glm::vec3(.5f, 1.f, .5f)));
+  static Arrow *arrow_circle = engine_.get_arrow(engine_.add_arrow(glm::vec3(0.f, 0.f, 0.f), glm::vec3(.5f, 1.f, .5f)));
 
   projectile(arrow_proj);
+  circle2(arrow_circle);
 }
 
 void Simulator::integrate()
