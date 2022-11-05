@@ -26,7 +26,7 @@ void SphereGridMap::get_neighbours_by_coords(const Sphere *s, std::list<Sphere *
 
 void SphereGridMap::get_neighbours(const Sphere *s, std::list<Sphere *> &res) const
 {
-  auto coords = get_3d_idx(s->pos);
+  auto coords = get_3d_idx(s->get_pos());
 
   size_t x_inf = (coords.x > 0) ? coords.x - 1 : coords.x;
   size_t x_sup = (coords.x + 1 <= world_cells_n_.x) ? coords.x + 1 : coords.x;
@@ -58,7 +58,7 @@ void SphereGridMap::get_neighbours(const Sphere *s, std::list<Sphere *> &res) co
 
 size_t SphereGridMap::insert(Sphere *s)
 {
-  size_t idx = get_flat_idx(s->pos);
+  size_t idx = get_flat_idx(s->get_pos());
 
   map_.emplace(idx, s);
 

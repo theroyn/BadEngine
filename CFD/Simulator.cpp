@@ -119,9 +119,9 @@ static void projectile(Arrow *arrow)
   std::call_once(of, [&]()
                  {
                    float theta_start_deg = 45.f;
-                   float theta_start = theta_start_deg * utility::PI / 180.f;
+                   float theta_start = theta_start_deg * static_cast<float>(utility::PI) / 180.f;
                    float s_start_deg = 180.f; // angle between x-z axii
-                   float s_start = s_start_deg * utility::PI / 180.f;
+                   float s_start = s_start_deg * static_cast<float>(utility::PI) / 180.f;
                    float v0 = 3.f;
                    float v0xz = v0 * cos(theta_start);
                    float v0y = v0 * sin(theta_start);
@@ -270,25 +270,25 @@ void Simulator::integrate_spheres(float h)
     }
 
     // internal forces calculations
-    glm::vec3 damping_force = -damping_ * sphere->vel;
+    glm::vec3 damping_force = -damping_ * sphere->get_vel();
     acc += damping_force / sphere->mass;
     static Sphere *lowSphere = nullptr;
     static size_t cnt = 0;
 
-    if (!lowSphere && sphere->pos.y < -2.5f)
+    if (!lowSphere && sphere->get_pos().y < -2.5f)
     {
       lowSphere = sphere;
     }
     if (lowSphere == sphere && cnt++ % 100 == 0)
     {
-      std::cout << "h:" << h << ", prev pos (" << lowSphere->pos.x << "," << lowSphere->pos.y << "," << lowSphere->pos.z << ")\n";
+      std::cout << "h:" << h << ", prev pos (" << lowSphere->get_pos().x << "," << lowSphere->get_pos().y << "," << lowSphere->get_pos().z << ")\n";
     }
     // semi-implicit euler integration
-    sphere->vel += h * acc;
-    sphere->pos += h * sphere->vel;
+    sphere->set_vel(sphere->get_vel() + h * acc);
+    sphere->set_pos(sphere->get_pos() + h * sphere->get_vel());
     if (lowSphere == sphere && cnt % 100 == 0)
     {
-      std::cout << "curr pos (" << lowSphere->pos.x << "," << lowSphere->pos.y << "," << lowSphere->pos.z << ")\n\n";
+      std::cout << "curr pos (" << lowSphere->get_pos().x << "," << lowSphere->get_pos().y << "," << lowSphere->get_pos().z << ")\n\n";
     }
 
     sphere->colliders_.clear();
@@ -373,17 +373,15 @@ void Simulator::init()
   for (unsigned int i = 0; i < spheres_n_; ++i)
   {
     if (small_start)
-      elem_indices.push_back(engine_.add_sphere(get_rand(), get_rand(), get_rand()));
+      elem_indices.push_back(engine_.add_sphere(get_rand(), get_rand(), get_rand(), true));
     else
-      elem_indices.push_back(engine_.add_sphere(get_rand(-w, w), get_rand(-h, h), get_rand(-d, d)));
+      elem_indices.push_back(engine_.add_sphere(get_rand(-w, w), get_rand(-h, h), get_rand(-d, d), true));
   }
 
   for (size_t ind : elem_indices)
   {
     Sphere *s = engine_.get_sphere(ind);
-    s->vel.x = get_rand(-.2f, .2f);
-    s->vel.y = get_rand(-.2f, .2f);
-    s->vel.z = get_rand(-.2f, .2f);
+    s->set_vel(glm::vec3(get_rand(-.2f, .2f), get_rand(-.2f, .2f), get_rand(-.2f, .2f)));
     spheres_.push_back(s);
   }
 

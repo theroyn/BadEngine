@@ -217,6 +217,7 @@ xcopy "$(ProjectDir)*.obj" "$(SolutionDir)CFD" /Y /I</Command>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Accessor.h" />
     <ClInclude Include="Arrow.h" />
     <ClInclude Include="BadEngine.h" />
     <ClInclude Include="Box.h" />
@@ -227,6 +228,7 @@ xcopy "$(ProjectDir)*.obj" "$(SolutionDir)CFD" /Y /I</Command>
     <ClInclude Include="gl_incs.h" />
     <ClInclude Include="Line.h" />
     <ClInclude Include="OBJParser.h" />
+    <ClInclude Include="Renderable.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Sphere.h" />
     <ClInclude Include="utils.h" />

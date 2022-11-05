@@ -24,8 +24,8 @@ void CollisionSolver::solve_collided_spheres(Sphere *s1,
 
   if (should_update)
   {
-    glm::vec3 n = glm::normalize(s1->pos - s2->pos);
-    glm::vec3 vrel = s1->vel - s2->vel;
+    glm::vec3 n = glm::normalize(s1->get_pos() - s2->get_pos());
+    glm::vec3 vrel = s1->get_vel() - s2->get_vel();
     float verl_scl = glm::dot(vrel, n);
 
     if (verl_scl < 0)
@@ -34,8 +34,8 @@ void CollisionSolver::solve_collided_spheres(Sphere *s1,
       float imp_denom = (1 / s1->mass) + (1 / s2->mass);
       float imp = imp_nom / imp_denom;
 
-      s1->vel += (imp / s1->mass) * n;
-      s2->vel -= (imp / s2->mass) * n;
+      s1->set_vel(s1->get_vel() + (imp / s1->mass) * n);
+      s2->set_vel(s2->get_vel() - (imp / s2->mass) * n);
     }
   }
 }
@@ -43,15 +43,19 @@ void CollisionSolver::solve_collided_spheres(Sphere *s1,
 void CollisionSolver::handle_world_collision2_coord(Sphere *s,
                                                     float glm::vec3::*coord)
 {
-  if (s->pos.*coord - s->rad <= center_.*coord - dims_.*coord / 2 && s->vel.*coord < 0)
+  if (s->get_pos().*coord - s->rad <= center_.*coord - dims_.*coord / 2 && s->get_vel().*coord < 0)
   {
-    s->vel.*coord *= -s->elasticity;
+    glm::vec3 v = s->get_vel();
+    v.*coord *= -s->elasticity;
+    s->set_vel(v);
     //s->pos.*coord = center_.*coord - dims_.*coord / 2 + s->rad;
   }
 
-  if (s->pos.*coord + s->rad >= center_.*coord + dims_.*coord / 2 && s->vel.*coord > 0)
+  if (s->get_pos().*coord + s->rad >= center_.*coord + dims_.*coord / 2 && s->get_vel().*coord > 0)
   {
-    s->vel.*coord *= -s->elasticity;
+    glm::vec3 v = s->get_vel();
+    v.*coord *= -s->elasticity;
+    s->set_vel(v);
     //s->pos.*coord = center_.*coord + dims_.*coord / 2 - s->rad;
   }
 }
@@ -71,11 +75,11 @@ void CollisionSolver::handle_world_collision(Sphere *s)
   glm::vec3 n(0.f);
   for (int i = 0; i < 3; ++i)
   {
-    if (s->pos[i] + s->rad >= center_[i] + dims_[i] * .5f)
+    if (s->get_pos()[i] + s->rad >= center_[i] + dims_[i] * .5f)
     {
       n[i] = -1.f;
     }
-    else if (s->pos[i] - s->rad <= center_[i] - dims_[i] * .5f)
+    else if (s->get_pos()[i] - s->rad <= center_[i] - dims_[i] * .5f)
     {
       n[i] = +1.f;
     }
@@ -83,7 +87,7 @@ void CollisionSolver::handle_world_collision(Sphere *s)
 
   n = glm::normalize(n);
 
-  glm::vec3 vrel = s->vel;
+  glm::vec3 vrel = s->get_vel();
   float verl_scl = glm::dot(vrel, n);
 
   if (verl_scl < 0)
@@ -92,7 +96,7 @@ void CollisionSolver::handle_world_collision(Sphere *s)
     float imp_denom = (1 / s->mass) + 0.f /** wall mass treated as infinite */;
     float imp = imp_nom / imp_denom;
 
-    s->vel += (imp / s->mass) * n;
+    s->set_vel(s->get_vel() + (imp / s->mass) * n);
   }
 }
 
@@ -108,7 +112,7 @@ void NaiveCollisionSolver::handle_collisions(const std::vector<Sphere *> &sphere
     {
       Sphere *s2 = *sit2;
 
-      if (glm::l2Norm(s1->pos, s2->pos) <= s1->rad + s2->rad)
+      if (glm::l2Norm(s1->get_pos(), s2->get_pos()) <= s1->rad + s2->rad)
         solve_collided_spheres(s1, *sit2);
     }
 
@@ -141,7 +145,7 @@ void GridRangeSolver::operator()(const tbb::blocked_range<size_t> &r) const
         continue;
       }
 
-      if (glm::l2Norm(s1->pos, s2->pos) <= s1->rad + s2->rad)
+      if (glm::l2Norm(s1->get_pos(), s2->get_pos()) <= s1->rad + s2->rad)
         solver_->solve_collided_spheres(s1, s2);
     }
 

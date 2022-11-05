@@ -335,27 +335,24 @@ void BadEngine::init()
 void BadEngine::draw_sphere_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans)
 {
   sphere_shader_programme_.use();
-  glBindVertexArray(sphere_vao_);
 
-  glm::vec3 cam_pos = cam_->get_pos();
-
-  sphere_shader_programme_.set_mat4("view", view_trans);
-  sphere_shader_programme_.set_mat4("projection", projection_trans);
-  sphere_shader_programme_.set_vec3("eye_pos", cam_pos);
-  sphere_shader_programme_.set_vec3("object_color", glm::vec3(1., .5, .31));
-
-  for (Sphere *sphere : spheres_)
+  for (const auto &it : models_by_vao_)
   {
-    glm::mat4 model_trans(1.f);
-    // glm operation are equal to multiplying by an affine matrix from the right,
-    // so if you multiply OP_a first and then OP_b, and in the shader you
-    // multiply model_trans * v, OP_b would occur BEFORE  OP_a:
-    // mat(I) * mat(OP_a) * mat(OP_b) * v.
-    model_trans = glm::translate(model_trans,
-                                 glm::vec3(sphere->pos));
-    model_trans = glm::scale(model_trans, glm::vec3(sphere->rad));
-    sphere_shader_programme_.set_mat4("model", model_trans);
-    glDrawElements(GL_TRIANGLES, (GLsizei)sphere_count_, GL_UNSIGNED_INT, NULL);
+    glBindVertexArray(it.first);
+
+    glm::vec3 cam_pos = cam_->get_pos();
+
+    sphere_shader_programme_.set_mat4("view", view_trans);
+    sphere_shader_programme_.set_mat4("projection", projection_trans);
+    sphere_shader_programme_.set_vec3("eye_pos", cam_pos);
+    sphere_shader_programme_.set_vec3("object_color", glm::vec3(1., .5, .31));
+    const std::vector<glm::mat4> &models = it.second;
+
+    for (const glm::mat4 &model : models)
+    {
+      sphere_shader_programme_.set_mat4("model", glm::value_ptr(model));
+      glDrawElements(GL_TRIANGLES, (GLsizei)sphere_count_, GL_UNSIGNED_INT, NULL);
+    }
   }
 }
 
@@ -581,13 +578,47 @@ void BadEngine::process_input()
 
 void BadEngine::demo_add_spheres()
 {
-  add_sphere(1.f, 2.f, -.8f);
-  add_sphere(-1.f, 2.f, -.8f);
+  add_sphere(1.f, 2.f, -.8f, false);
+  add_sphere(-1.f, 2.f, -.8f, false);
 }
 
-size_t BadEngine::add_sphere(float x, float y, float z)
+glm::mat4 &BadEngine::get_model(GLuint vao, size_t idx)
 {
-  spheres_.emplace_back(new Sphere(x, y, z, sphere_rad_));
+  return models_by_vao_.at(vao).at(idx);
+}
+
+glm::vec3 &BadEngine::get_pos(size_t idx)
+{
+  return states_.at(idx).p;
+}
+
+glm::vec3 &BadEngine::get_vel(size_t idx)
+{
+  return states_.at(idx).v;
+}
+
+Renderable BadEngine::add_renderable()
+{
+  models_by_vao_[sphere_vao_].push_back(glm::mat4{});
+  Accessor<glm::mat4> model_acc(std::bind(&BadEngine::get_model, this, sphere_vao_, models_by_vao_[sphere_vao_].size() - 1));
+  return Renderable(model_acc);
+}
+
+size_t BadEngine::add_sphere(float x, float y, float z, bool renderable)
+{
+  states_.emplace_back(glm::vec3(x, y, z), glm::vec3{});
+
+  auto get_pos = std::bind(&BadEngine::get_pos, this, states_.size() - 1);
+  auto get_vel = std::bind(&BadEngine::get_vel, this, states_.size() - 1);
+  Accessor<glm::vec3> pos_acc(get_pos);
+  Accessor<glm::vec3> vel_acc(get_vel);
+
+  spheres_.push_back(new Sphere(x, y, z, sphere_rad_, pos_acc, vel_acc));
+  if (renderable)
+  {
+    Renderable r = add_renderable();
+    spheres_[spheres_.size() - 1]->add_renderable(r);
+  }
 
   return spheres_.size() - 1;
 }
@@ -604,16 +635,12 @@ Box *BadEngine::get_box(size_t id) const
 
 void BadEngine::set_sphere_pos(int id, float x, float y, float z)
 {
-  spheres_[id]->pos.x = x;
-  spheres_[id]->pos.y = y;
-  spheres_[id]->pos.z = z;
+  spheres_[id]->set_pos(glm::vec3(x, y, z));
 }
 
 void BadEngine::set_sphere_velocity(int id, float x, float y, float z)
 {
-  spheres_[id]->vel.x = x;
-  spheres_[id]->vel.y = y;
-  spheres_[id]->vel.z = z;
+  spheres_[id]->set_vel(glm::vec3(x, y, z));
 }
 
 size_t BadEngine::add_box(const glm::vec3 &center, const glm::vec3 &dims)

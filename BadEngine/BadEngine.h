@@ -44,7 +44,7 @@ public:
   float get_sphere_radius(float rad) const { return sphere_rad_; }
   void set_sphere_pos(int id, float x, float y, float z);
   void set_sphere_velocity(int id, float x, float y, float z);
-  size_t add_sphere(float x, float y, float z);
+  size_t add_sphere(float x, float y, float z, bool renderable);
   void set_world_dims(glm::vec3 dims);
   glm::vec3 get_world_center() const { return cube_.pos; }
   glm::vec3 get_world_dims() const { return cube_scale_; }
@@ -69,6 +69,10 @@ private:
   void draw_lines_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans);
   void init_arrows_program();
   void draw_arrows_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans);
+  glm::mat4 &get_model(GLuint vao, size_t idx);
+  glm::vec3 &get_pos(size_t idx);
+  glm::vec3 &get_vel(size_t idx);
+  Renderable add_renderable();
 
 private:
   static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
@@ -80,6 +84,18 @@ private:
   Camera *cam_;
 
   OBJParser parser_;
+
+  // (vao id --> vector of model transformations)
+  std::unordered_map<GLuint, std::vector<glm::mat4>> models_by_vao_;
+
+  struct State
+  {
+    State(const glm::vec3 &p, const glm::vec3 &v) : p(p), v(v) {}
+    glm::vec3 p;
+    glm::vec3 v;
+  };
+  std::vector<State> states_;
+
   std::vector<Sphere *> spheres_;
   Shader sphere_shader_programme_;
   GLuint sphere_vao_ = 0;
