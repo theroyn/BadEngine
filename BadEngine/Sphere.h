@@ -34,12 +34,6 @@ public:
     vel_acc_.set(v);
   }
 
-  void set_pos(const glm::vec3 &pos) override
-  {
-    Shape::set_pos(pos);
-    render(glm::identity<glm::quat>(), glm::vec3(rad)); // DUDU identity orientation
-  }
-
   float rad;
   float elasticity;
   float mass;

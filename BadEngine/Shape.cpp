@@ -17,7 +17,7 @@ void Shape::add_renderable(Renderable r)
   r_ = r;
 }
 
-void Shape::render(const glm::quat &orientation, const glm::vec3 &dims)
+void Shape::update_model_if_renderable(const glm::quat &orientation, const glm::vec3 &dims)
 {
   if (r_.has_value())
   {
@@ -27,6 +27,6 @@ void Shape::render(const glm::quat &orientation, const glm::vec3 &dims)
                                  get_pos());
     model_trans *= glm::toMat4(orientation);
     model_trans = glm::scale(model_trans, dims);
-    r_.value().Render(model_trans);
+    r_.value().update_model_transformation(model_trans);
   }
 }

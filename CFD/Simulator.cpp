@@ -296,6 +296,8 @@ void Simulator::integrate_spheres(float h)
     }
 
     sphere->colliders_.clear();
+
+    sphere->update_model_if_renderable(glm::identity<glm::quat>(), glm::vec3(sphere->rad)); // DUDU identity orientation
   }
 }
 
@@ -462,13 +464,13 @@ void Simulator::run()
 {
   while (!engine_.loop_done())
   {
-    engine_.draw();
-
     handle_collisions();
 
     integrate();
 
     kinematics();
+
+    engine_.draw();
 
     print_fps();
   }

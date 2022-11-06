@@ -16,7 +16,7 @@ public:
 
 public:
   void add_renderable(Renderable r);
-  void render(const glm::quat &orientation, const glm::vec3 &dims);
+  void update_model_if_renderable(const glm::quat &orientation, const glm::vec3 &dims);
 
 private:
   std::optional<Renderable> r_;

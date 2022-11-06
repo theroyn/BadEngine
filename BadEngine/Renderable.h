@@ -13,5 +13,5 @@ public:
   Renderable(Accessor<glm::mat4> updater) : updater_(updater)
   {
   }
-  void Render(const glm::mat4 &m) { updater_.set(m); }
+  void update_model_transformation(const glm::mat4 &m) { updater_.set(m); }
 };
