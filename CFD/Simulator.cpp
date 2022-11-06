@@ -233,6 +233,9 @@ void Simulator::kinematics()
 
   projectile(arrow_proj);
   circle2(arrow_circle);
+
+  arrow_proj->update_model_if_renderable(arrow_proj->orientation, arrow_proj->dims);
+  arrow_circle->update_model_if_renderable(arrow_circle->orientation, arrow_circle->dims);
 }
 
 void Simulator::integrate()

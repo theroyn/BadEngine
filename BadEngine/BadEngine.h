@@ -29,10 +29,24 @@ public:
   void init();
   void run();
   void draw();
-
-public:
   bool loop_done() const;
   operator bool() const;
+
+private: // inner classes and enums
+  enum class RenderableType
+  {
+    sphere = 0,
+    arrow,
+  };
+
+  struct RenderData
+  {
+    GLuint vao;
+    size_t indices_count;
+    Shader program;
+    bool has_element_array;
+    glm::vec3 object_color;
+  };
 
 public:
   int get_status() const { return status_; }
@@ -60,7 +74,7 @@ private:
   void demo_add_spheres();
   void process_input();
   void init_sphere_program();
-  void draw_sphere_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans);
+  void draw_shape_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans);
   void init_boxes_program();
   void draw_boxes_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans);
   void init_cube_program();
@@ -68,9 +82,8 @@ private:
   void init_lines_program();
   void draw_lines_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans);
   void init_arrows_program();
-  void draw_arrows_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans);
-  glm::mat4 &get_model(GLuint vao, size_t idx);
-  Renderable add_renderable();
+  glm::mat4 &get_model(RenderableType type, size_t idx);
+  Renderable add_renderable(RenderableType type);
   glm::vec3 &get_state_pos(size_t idx);
   glm::vec3 &get_state_vel(size_t idx);
   Accessor<glm::vec3> get_pos_acc(size_t idx);
@@ -86,9 +99,10 @@ private:
   Camera *cam_;
 
   OBJParser parser_;
+  std::unordered_map<RenderableType, RenderData> render_data_;
 
-  // (vao id --> vector of model transformations)
-  std::unordered_map<GLuint, std::vector<glm::mat4>> models_by_vao_;
+  // (RenderableType --> vector of model transformations)
+  std::unordered_map<RenderableType, std::vector<glm::mat4>> models_by_vao_;
 
   struct State
   {
@@ -102,9 +116,6 @@ private:
   size_t add_state(const glm::vec3 &pos, const glm::vec3 &vel);
 
   std::vector<Sphere *> spheres_;
-  Shader sphere_shader_programme_;
-  GLuint sphere_vao_ = 0;
-  size_t sphere_count_ = 0;
   float sphere_rad_;
 
   std::vector<Box *> boxes_;
@@ -116,9 +127,6 @@ private:
   GLuint line_vao_ = 0;
 
   std::vector<Arrow *> arrows_;
-  GLuint arrow_vao_ = 0;
-  size_t arrow_count_ = 0;
-  Shader arrow_shader_programme_;
 
   Shader cube_shader_programme_;
   GLuint cube_vbos_[2];

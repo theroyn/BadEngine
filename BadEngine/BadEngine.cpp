@@ -60,10 +60,11 @@ void BadEngine::init_sphere_program()
   std::vector<float> sphere_data = parser_.get_data();
   std::vector<unsigned int> sphere_indices = parser_.get_indices();
 
-  sphere_count_ = sphere_indices.size();
+  size_t sphere_count = sphere_indices.size();
+  GLuint sphere_vao = 0;
 
-  glGenVertexArrays(1, &sphere_vao_);
-  glBindVertexArray(sphere_vao_);
+  glGenVertexArrays(1, &sphere_vao);
+  glBindVertexArray(sphere_vao);
 
   GLuint sphere_vbos[2];
 
@@ -87,14 +88,18 @@ void BadEngine::init_sphere_program()
   glEnableVertexAttribArray(0);
   glEnableVertexAttribArray(1);
 
-  sphere_shader_programme_ = Shader("base_vs.glsl", "base_fs.glsl");
+  Shader sphere_shader_programm("base_vs.glsl", "base_fs.glsl");
 
-  if (sphere_shader_programme_.get_error())
+  if (sphere_shader_programm.get_error())
   {
-    auto msgv = sphere_shader_programme_.get_message();
+    auto msgv = sphere_shader_programm.get_message();
     msg_ = VMSG_TO_STR(msgv);
-    status_ = sphere_shader_programme_.get_error() ? R_FAILURE : R_SUCCESS;
+    status_ = sphere_shader_programm.get_error() ? R_FAILURE : R_SUCCESS;
   }
+
+  RenderData render_data{ sphere_vao, sphere_count, sphere_shader_programm, true, glm::vec3(1., .5, .31) };
+
+  render_data_.emplace(RenderableType::sphere, render_data);
 }
 
 void BadEngine::init_boxes_program()
@@ -205,12 +210,14 @@ void BadEngine::init_cube_program()
 
 void BadEngine::init_arrows_program()
 {
-  arrow_count_ = sizeof(arrow_coords_w_normals_n_textures) / sizeof(arrow_coords_w_normals_n_textures[0]);
+  size_t arrow_count = sizeof(arrow_coords_w_normals_n_textures) / sizeof(arrow_coords_w_normals_n_textures[0]);
 
-  glGenVertexArrays(1, &arrow_vao_);
-  glBindVertexArray(arrow_vao_);
-
+  GLuint arrow_vao = 0;
   GLuint arrow_vbo;
+
+  glGenVertexArrays(1, &arrow_vao);
+  glBindVertexArray(arrow_vao);
+
 
   glGenBuffers(1, &arrow_vbo);
   glBindBuffer(GL_ARRAY_BUFFER, arrow_vbo);
@@ -227,14 +234,18 @@ void BadEngine::init_arrows_program()
   glEnableVertexAttribArray(1);
   glEnableVertexAttribArray(2);
 
-  arrow_shader_programme_ = Shader("base_vs.glsl", "base_fs.glsl");
+  Shader arrow_shader_program("base_vs.glsl", "base_fs.glsl");
 
-  if (arrow_shader_programme_.get_error())
+  if (arrow_shader_program.get_error())
   {
-    auto msgv = arrow_shader_programme_.get_message();
+    auto msgv = arrow_shader_program.get_message();
     msg_ = VMSG_TO_STR(msgv);
     status_ = false;
   }
+
+  RenderData render_data{ arrow_vao, arrow_count, arrow_shader_program, false, glm::vec3(0.f, 1.f, 0.f) };
+
+  render_data_.emplace(RenderableType::arrow, render_data);
 }
 
 void BadEngine::init()
@@ -332,26 +343,35 @@ void BadEngine::init()
   }
 }
 
-void BadEngine::draw_sphere_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans)
+void BadEngine::draw_shape_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans)
 {
-  sphere_shader_programme_.use();
-
   for (const auto &it : models_by_vao_)
   {
-    glBindVertexArray(it.first);
+    const RenderData &render_data = render_data_.at(it.first);
+
+    render_data.program.use();
+    glBindVertexArray(render_data.vao);
 
     glm::vec3 cam_pos = cam_->get_pos();
 
-    sphere_shader_programme_.set_mat4("view", view_trans);
-    sphere_shader_programme_.set_mat4("projection", projection_trans);
-    sphere_shader_programme_.set_vec3("eye_pos", cam_pos);
-    sphere_shader_programme_.set_vec3("object_color", glm::vec3(1., .5, .31));
+    render_data.program.set_mat4("view", view_trans);
+    render_data.program.set_mat4("projection", projection_trans);
+    render_data.program.set_vec3("eye_pos", cam_pos);
+    render_data.program.set_vec3("object_color", render_data.object_color);
+
     const std::vector<glm::mat4> &models = it.second;
 
     for (const glm::mat4 &model : models)
     {
-      sphere_shader_programme_.set_mat4("model", glm::value_ptr(model));
-      glDrawElements(GL_TRIANGLES, (GLsizei)sphere_count_, GL_UNSIGNED_INT, NULL);
+      render_data.program.set_mat4("model", glm::value_ptr(model));
+      if (render_data.has_element_array)
+      {
+        glDrawElements(GL_TRIANGLES, (GLsizei)render_data.indices_count, GL_UNSIGNED_INT, NULL);
+      }
+      else
+      {
+        glDrawArrays(GL_TRIANGLES, 0, (GLsizei)render_data.indices_count);
+      }
     }
   }
 }
@@ -453,31 +473,6 @@ void BadEngine::draw_cube_program(const glm::mat4 &view_trans, const glm::mat4 &
                  NULL);
 }
 
-void BadEngine::draw_arrows_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans)
-{
-  arrow_shader_programme_.use();
-  glBindVertexArray(arrow_vao_);
-
-  glm::vec3 cam_pos = cam_->get_pos();
-
-  arrow_shader_programme_.set_mat4("view", view_trans);
-  arrow_shader_programme_.set_mat4("projection", projection_trans);
-  arrow_shader_programme_.set_vec3("eye_pos", cam_pos);
-  for (Arrow *a : arrows_)
-  {
-    glm::mat4 model_trans(1.f);
-    model_trans = glm::translate(model_trans,
-                                 a->get_pos());
-    model_trans *= glm::toMat4(a->orientation);
-    model_trans = glm::scale(model_trans, a->dims);
-
-    arrow_shader_programme_.set_mat4("model", model_trans);
-    arrow_shader_programme_.set_vec3("object_color", glm::vec3(0.f, 1.f, 0.f));
-
-    glDrawArrays(GL_TRIANGLES, 0, (GLsizei)arrow_count_);
-  }
-}
-
 void BadEngine::draw()
 {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -485,15 +480,13 @@ void BadEngine::draw()
   glm::mat4 view_trans = cam_->get_view();
   glm::mat4 projection_trans = cam_->get_projection();
 
-  draw_sphere_program(view_trans, projection_trans);
+  draw_shape_program(view_trans, projection_trans);
 
   draw_boxes_program(view_trans, projection_trans);
 
   draw_cube_program(view_trans, projection_trans);
 
   draw_lines_program(view_trans, projection_trans);
-
-  draw_arrows_program(view_trans, projection_trans);
 
   glfwSwapBuffers(window_);
   glfwPollEvents();
@@ -547,8 +540,8 @@ bool BadEngine::loop_done() const
 
 void BadEngine::run()
 {
-  sphere_shader_programme_.use();
-  glBindVertexArray(sphere_vao_);
+  render_data_.at(RenderableType::sphere).program.use();
+  glBindVertexArray(render_data_.at(RenderableType::sphere).vao);
 
   while (!loop_done())
   {
@@ -582,15 +575,15 @@ void BadEngine::demo_add_spheres()
   add_sphere(-1.f, 2.f, -.8f, false);
 }
 
-glm::mat4 &BadEngine::get_model(GLuint vao, size_t idx)
+glm::mat4 &BadEngine::get_model(RenderableType type, size_t idx)
 {
-  return models_by_vao_.at(vao).at(idx);
+  return models_by_vao_.at(type).at(idx);
 }
 
-Renderable BadEngine::add_renderable()
+Renderable BadEngine::add_renderable(RenderableType type)
 {
-  models_by_vao_[sphere_vao_].push_back(glm::mat4{});
-  Accessor<glm::mat4> model_acc(std::bind(&BadEngine::get_model, this, sphere_vao_, models_by_vao_[sphere_vao_].size() - 1));
+  models_by_vao_[type].push_back(glm::mat4{});
+  Accessor<glm::mat4> model_acc(std::bind(&BadEngine::get_model, this, type, models_by_vao_[type].size() - 1));
   return Renderable(model_acc);
 }
 
@@ -630,7 +623,7 @@ size_t BadEngine::add_sphere(float x, float y, float z, bool renderable)
   spheres_.push_back(new Sphere(x, y, z, sphere_rad_, get_pos_acc(idx), get_vel_acc(idx)));
   if (renderable)
   {
-    Renderable r = add_renderable();
+    Renderable r = add_renderable(RenderableType::sphere);
     spheres_[spheres_.size() - 1]->add_renderable(r);
   }
 
@@ -679,12 +672,11 @@ size_t BadEngine::add_arrow(const glm::vec3 &pos, const glm::vec3 &dims, bool re
   size_t idx = add_state(pos, glm::vec3{});
   arrows_.push_back(new Arrow(get_pos_acc(idx), get_vel_acc(idx), pos, dims));
 
-  // DUDU uncomment
-  //if (renderable)
-  //{
-  //  Renderable r = add_renderable();
-  //  arrows_[arrows_.size() - 1]->add_renderable(r);
-  //}
+  if (renderable)
+  {
+    Renderable r = add_renderable(RenderableType::arrow);
+    arrows_[arrows_.size() - 1]->add_renderable(r);
+  }
   return arrows_.size() - 1;
 }
 
