@@ -3,31 +3,28 @@
 #include "gl_incs.h"
 #include "Renderable.h"
 #include "Accessor.h"
+#include "Shape.h"
 
 #include <mutex>
 #include <optional>
 #include <unordered_set>
 
-struct Sphere
+class Sphere : public Shape
 {
+public:
   Sphere(float x,
          float y,
          float z,
          float rad,
          Accessor<glm::vec3> pos_acc,
-         Accessor<glm::vec3> vel_acc) : mass(7.f),
+         Accessor<glm::vec3> vel_acc) : Shape(pos_acc),
+                                        mass(7.f),
                                         rad(rad),
                                         elasticity(.9f),
-                                        pos_acc_(pos_acc),
                                         vel_acc_(vel_acc)
   {
     set_pos(glm::vec3(x, y, z));
     set_vel(glm::vec3(0.f));
-  }
-
-  void add_renderable(Renderable r)
-  {
-    r_ = r;
   }
 
   glm::vec3 get_vel() const { return vel_acc_.get(); }
@@ -37,20 +34,10 @@ struct Sphere
     vel_acc_.set(v);
   }
 
-  glm::vec3 get_pos() const { return pos_acc_.get(); }
-
-  void set_pos(const glm::vec3 &pos)
+  void set_pos(const glm::vec3 &pos) override
   {
-    pos_acc_.set(pos);
-    if (r_.has_value())
-    {
-      glm::mat4 model_trans(1.f);
-
-      model_trans = glm::translate(model_trans,
-                                   glm::vec3(pos));
-      model_trans = glm::scale(model_trans, glm::vec3(rad));
-      r_.value().Render(model_trans);
-    }
+    Shape::set_pos(pos);
+    render(glm::identity<glm::quat>(), glm::vec3(rad)); // DUDU identity orientation
   }
 
   float rad;
@@ -60,7 +47,5 @@ struct Sphere
   std::unordered_set<Sphere *> colliders_;
 
 private:
-  std::optional<Renderable> r_;
-  Accessor<glm::vec3> pos_acc_;
   Accessor<glm::vec3> vel_acc_;
 };

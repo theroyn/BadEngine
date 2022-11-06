@@ -467,7 +467,7 @@ void BadEngine::draw_arrows_program(const glm::mat4 &view_trans, const glm::mat4
   {
     glm::mat4 model_trans(1.f);
     model_trans = glm::translate(model_trans,
-                                 a->pos_current);
+                                 a->get_pos());
     model_trans *= glm::toMat4(a->orientation);
     model_trans = glm::scale(model_trans, a->dims);
 
@@ -587,16 +587,6 @@ glm::mat4 &BadEngine::get_model(GLuint vao, size_t idx)
   return models_by_vao_.at(vao).at(idx);
 }
 
-glm::vec3 &BadEngine::get_pos(size_t idx)
-{
-  return states_.at(idx).p;
-}
-
-glm::vec3 &BadEngine::get_vel(size_t idx)
-{
-  return states_.at(idx).v;
-}
-
 Renderable BadEngine::add_renderable()
 {
   models_by_vao_[sphere_vao_].push_back(glm::mat4{});
@@ -604,16 +594,40 @@ Renderable BadEngine::add_renderable()
   return Renderable(model_acc);
 }
 
+size_t BadEngine::add_state(const glm::vec3 &pos, const glm::vec3 &vel)
+{
+  states_.emplace_back(pos, vel);
+  return states_.size() - 1;
+}
+
+Accessor<glm::vec3> BadEngine::get_vel_acc(size_t idx)
+{
+  std::function<glm::vec3 &()> get_func(std::bind(&BadEngine::get_state_vel, this, idx));
+  return Accessor<glm::vec3>(get_func);
+}
+
+Accessor<glm::vec3> BadEngine::get_pos_acc(size_t idx)
+{
+  std::function<glm::vec3 &()> get_func(std::bind(&BadEngine::get_state_pos, this, idx));
+  return Accessor<glm::vec3>(get_func);
+}
+
+glm::vec3 &BadEngine::get_state_pos(size_t idx)
+{
+  return states_.at(idx).p;
+}
+
+glm::vec3 &BadEngine::get_state_vel(size_t idx)
+{
+  return states_.at(idx).v;
+}
+
 size_t BadEngine::add_sphere(float x, float y, float z, bool renderable)
 {
-  states_.emplace_back(glm::vec3(x, y, z), glm::vec3{});
+  size_t idx = add_state(glm::vec3(x, y, z), glm::vec3{});
 
-  auto get_pos = std::bind(&BadEngine::get_pos, this, states_.size() - 1);
-  auto get_vel = std::bind(&BadEngine::get_vel, this, states_.size() - 1);
-  Accessor<glm::vec3> pos_acc(get_pos);
-  Accessor<glm::vec3> vel_acc(get_vel);
 
-  spheres_.push_back(new Sphere(x, y, z, sphere_rad_, pos_acc, vel_acc));
+  spheres_.push_back(new Sphere(x, y, z, sphere_rad_, get_pos_acc(idx), get_vel_acc(idx)));
   if (renderable)
   {
     Renderable r = add_renderable();
@@ -660,9 +674,17 @@ Line *BadEngine::get_line(size_t id) const
   return lines_.at(id);
 }
 
-size_t BadEngine::add_arrow(const glm::vec3 &pos, const glm::vec3 &dims)
+size_t BadEngine::add_arrow(const glm::vec3 &pos, const glm::vec3 &dims, bool renderable)
 {
-  arrows_.push_back(new Arrow(pos, dims));
+  size_t idx = add_state(pos, glm::vec3{});
+  arrows_.push_back(new Arrow(get_pos_acc(idx), get_vel_acc(idx), pos, dims));
+
+  // DUDU uncomment
+  //if (renderable)
+  //{
+  //  Renderable r = add_renderable();
+  //  arrows_[arrows_.size() - 1]->add_renderable(r);
+  //}
   return arrows_.size() - 1;
 }
 

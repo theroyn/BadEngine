@@ -61,7 +61,7 @@ void Simulator::handle_collisions()
 
   if (solver_iteration_counter > 0)
   {
-    std::cout << "Solved after " << solver_iteration_counter << " iterations\n";
+    //std::cout << "Solved after " << solver_iteration_counter << " iterations\n";
   }
 }
 
@@ -152,7 +152,7 @@ static void projectile(Arrow *arrow)
   glm::vec3 g = GRAVITY;
   glm::vec3 curr_v = arrow->vel_start + delta * g;
   //  accurate because acceleration is constant
-  arrow->pos_current = arrow->pos_start + delta * arrow->vel_start + 0.5f * delta * delta * g;
+  arrow->set_pos(arrow->pos_start + delta * arrow->vel_start + 0.5f * delta * delta * g);
   arrow->orient(curr_v);
   float tmax = arrow->vel_start.y / (-g.y);
   bool is_tmax = (abs(delta - tmax) < .01f);
@@ -172,8 +172,10 @@ static void circle(Arrow *arrow)
   static glm::vec3 v0(0.f, 1.f, 0.f);
   std::call_once(of, [&]()
                  {
-                   arrow->vel_start = arrow->vel_current = v0;
-                   arrow->pos_current = arrow->pos_start = p0;
+                   arrow->vel_start = v0;
+                   arrow->set_vel(arrow->vel_start);
+                   arrow->pos_start = p0;
+                   arrow->set_pos(arrow->pos_start);
 
                    // orientation
                    arrow->orient(p0);
@@ -185,10 +187,10 @@ static void circle(Arrow *arrow)
   float v_length = glm::l2Norm(v0);
   float ar = v_length * v_length / rad;
 
-  glm::vec3 a = glm::normalize(-arrow->pos_current) * ar;
+  glm::vec3 a = glm::normalize(-arrow->get_pos()) * ar;
 
-  arrow->vel_current += delta * a;
-  arrow->pos_current += delta * arrow->vel_current;
+  arrow->set_vel(arrow->get_vel() + delta * a);
+  arrow->set_pos(arrow->get_pos() + delta * arrow->get_vel());
   arrow->orient(a);
 }
 
@@ -202,8 +204,10 @@ static void circle2(Arrow *arrow)
   static glm::vec3 v0(0.f, 1.f, 0.f);
   std::call_once(of, [&]()
                  {
-                   arrow->vel_start = arrow->vel_current = v0;
-                   arrow->pos_current = arrow->pos_start = p0;
+                   arrow->vel_start = v0;
+                   arrow->set_vel(arrow->vel_start);
+                   arrow->pos_start = p0;
+                   arrow->set_pos(arrow->pos_start);
 
                    // orientation
                    arrow->orient(p0);
@@ -214,18 +218,18 @@ static void circle2(Arrow *arrow)
   float v_length = glm::l2Norm(v0);
   float ar = v_length * v_length / rad;
 
-  glm::vec3 a = glm::normalize(-arrow->pos_current) * ar;
+  glm::vec3 a = glm::normalize(-arrow->get_pos()) * ar;
 
-  arrow->vel_current += delta * a;
-  arrow->pos_current = rad * glm::vec3(cos(delta), sin(delta), 0.f);
-  delta * arrow->vel_current;
-  arrow->orient(glm::normalize(-arrow->pos_current));
+  arrow->set_vel(arrow->get_vel() + delta * a);
+  arrow->set_pos(rad * glm::vec3(cos(delta), sin(delta), 0.f));
+  delta * arrow->get_vel();
+  arrow->orient(glm::normalize(-arrow->get_pos()));
 }
 
 void Simulator::kinematics()
 {
-  static Arrow *arrow_proj = engine_.get_arrow(engine_.add_arrow(glm::vec3(0.f, 0.f, 0.f), glm::vec3(.5f, 1.f, .5f)));
-  static Arrow *arrow_circle = engine_.get_arrow(engine_.add_arrow(glm::vec3(0.f, 0.f, 0.f), glm::vec3(.5f, 1.f, .5f)));
+  static Arrow *arrow_proj = engine_.get_arrow(engine_.add_arrow(glm::vec3(0.f, 0.f, 0.f), glm::vec3(.5f, 1.f, .5f), true));
+  static Arrow *arrow_circle = engine_.get_arrow(engine_.add_arrow(glm::vec3(0.f, 0.f, 0.f), glm::vec3(.5f, 1.f, .5f), true));
 
   projectile(arrow_proj);
   circle2(arrow_circle);

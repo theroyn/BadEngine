@@ -4,14 +4,20 @@
 
 #include "utils.h"
 
-struct Arrow
+class Arrow : public Shape
 {
-  Arrow(const glm::vec3 &pos, const glm::vec3 &dims) : pos_start(pos),
-                                                       pos_current(pos),
-                                                       dims(dims),
-                                                       vel_start(0.f),
-                                                       vel_current(0.f)
+public:
+  Arrow(Accessor<glm::vec3> pos_acc,
+        Accessor<glm::vec3> vel_acc,
+        const glm::vec3 &pos,
+        const glm::vec3 &dims) : Shape(pos_acc),
+                                 pos_start(pos),
+                                 dims(dims),
+                                 vel_start(0.f),
+                                 vel_acc_(vel_acc)
   {
+    set_vel(vel_start);
+    set_pos(pos_start);
     static constexpr float ANGLE = 0.f;
     float half_angle = 0.5f * (utility::PI * 0.f);
     orientation.w = cos(half_angle);
@@ -19,6 +25,13 @@ struct Arrow
     orientation.y = sin(half_angle) * 0.f;
     orientation.z = sin(half_angle) * 0.f;
     orientation = glm::normalize(orientation);
+  }
+
+  glm::vec3 get_vel() const { return vel_acc_.get(); }
+
+  void set_vel(const glm::vec3 &v)
+  {
+    vel_acc_.set(v);
   }
 
   void orient(const glm::vec3 &dir)
@@ -44,10 +57,9 @@ struct Arrow
   }
 
   glm::vec3 pos_start;
-  glm::vec3 pos_current;
   glm::vec3 dims;
   glm::vec3 vel_start;
-  glm::vec3 vel_current;
   float theta = 0.f;
   glm::quat orientation;
+  Accessor<glm::vec3> vel_acc_;
 };

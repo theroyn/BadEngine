@@ -207,6 +207,7 @@ xcopy "$(ProjectDir)*.obj" "$(SolutionDir)CFD" /Y /I</Command>
     <ClCompile Include="OBJParser.cpp" />
     <ClCompile Include="quadrics.cpp" />
     <ClCompile Include="Shader.cpp" />
+    <ClCompile Include="Shape.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -230,6 +231,7 @@ xcopy "$(ProjectDir)*.obj" "$(SolutionDir)CFD" /Y /I</Command>
     <ClInclude Include="OBJParser.h" />
     <ClInclude Include="Renderable.h" />
     <ClInclude Include="Shader.h" />
+    <ClInclude Include="Shape.h" />
     <ClInclude Include="Sphere.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>

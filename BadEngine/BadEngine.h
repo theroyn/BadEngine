@@ -53,7 +53,7 @@ public:
   Box *get_box(size_t id) const;
   size_t add_line(const glm::vec3 &start, const glm::vec3 &end);
   Line *get_line(size_t id) const;
-  size_t add_arrow(const glm::vec3 &pos, const glm::vec3 &dims);
+  size_t add_arrow(const glm::vec3 &pos, const glm::vec3 &dims, bool renderable);
   Arrow *get_arrow(size_t id) const;
 
 private:
@@ -70,9 +70,11 @@ private:
   void init_arrows_program();
   void draw_arrows_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans);
   glm::mat4 &get_model(GLuint vao, size_t idx);
-  glm::vec3 &get_pos(size_t idx);
-  glm::vec3 &get_vel(size_t idx);
   Renderable add_renderable();
+  glm::vec3 &get_state_pos(size_t idx);
+  glm::vec3 &get_state_vel(size_t idx);
+  Accessor<glm::vec3> get_pos_acc(size_t idx);
+  Accessor<glm::vec3> get_vel_acc(size_t idx);
 
 private:
   static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
@@ -91,10 +93,13 @@ private:
   struct State
   {
     State(const glm::vec3 &p, const glm::vec3 &v) : p(p), v(v) {}
+
     glm::vec3 p;
     glm::vec3 v;
   };
+
   std::vector<State> states_;
+  size_t add_state(const glm::vec3 &pos, const glm::vec3 &vel);
 
   std::vector<Sphere *> spheres_;
   Shader sphere_shader_programme_;
