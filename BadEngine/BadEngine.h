@@ -37,6 +37,7 @@ private: // inner classes and enums
   {
     sphere = 0,
     arrow,
+    box,
   };
 
   struct RenderData
@@ -63,7 +64,7 @@ public:
   glm::vec3 get_world_center() const { return cube_.pos; }
   glm::vec3 get_world_dims() const { return cube_scale_; }
 
-  size_t add_box(const glm::vec3 &center, const glm::vec3 &dims);
+  size_t add_box(const glm::vec3 &center, const glm::vec3 &dims, bool is_static, bool renderable);
   Box *get_box(size_t id) const;
   size_t add_line(const glm::vec3 &start, const glm::vec3 &end);
   Line *get_line(size_t id) const;
@@ -73,10 +74,9 @@ public:
 private:
   void demo_add_spheres();
   void process_input();
-  void init_sphere_program();
   void draw_shape_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans);
+  void init_sphere_program();
   void init_boxes_program();
-  void draw_boxes_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans);
   void init_cube_program();
   void draw_cube_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans);
   void init_lines_program();
@@ -119,9 +119,6 @@ private:
   float sphere_rad_;
 
   std::vector<Box *> boxes_;
-  Shader box_shader_programme_;
-  GLuint box_vao_ = 0;
-  size_t box_count_ = 0;
   std::vector<Line *> lines_;
   Shader line_shader_programme_;
   GLuint line_vao_ = 0;

@@ -1,22 +1,31 @@
 #pragma once
 
 #include "gl_incs.h"
+#include "Shape.h"
+
 #include <mutex>
 #include <unordered_set>
 #include "utils.h"
 
-struct Box
+class Box : public Shape
 {
-  Box(const glm::vec3 &center, const glm::vec3 &dims, bool is_static = false) : center(center),
-                                                                                vel(0.f),
-                                                                                P(0.f),
-                                                                                L(0.f),
-                                                                                angular_vel(0.f, 0.f, 0.f),
-                                                                                inv_mass(is_static ? 0.f : (1.f / 7.f)),
-                                                                                dims(dims),
-                                                                                elasticity(.9f),
-                                                                                color(1., .5, .71)
+public:
+  Box(Accessor<glm::vec3> pos_acc,
+      Accessor<glm::vec3> vel_acc,
+      const glm::vec3 &center,
+      const glm::vec3 &dims,
+      bool is_static) : Shape(pos_acc),
+                                P(0.f),
+                                L(0.f),
+                                angular_vel(0.f, 0.f, 0.f),
+                                inv_mass(is_static ? 0.f : (1.f / 7.f)),
+                                dims(dims),
+                                elasticity(.9f),
+                                color(1., .5, .71),
+                                vel_acc_(vel_acc)
   {
+    set_pos(center);
+    set_vel(glm::vec3(0.f));
     static constexpr float ANGLE = 0.f;
     float half_angle = 0.5f * (utility::PI * 0.f);
     orientation.w = cos(half_angle);
@@ -38,15 +47,20 @@ struct Box
 
   void set_initial_vel(const glm::vec3 &v)
   {
-    vel = v;
+    set_vel(v);
     if (inv_mass > .001)
     {
-      P = vel / inv_mass;
+      P = get_vel() / inv_mass;
     }
   }
 
-  glm::vec3 center;
-  glm::vec3 vel;
+  glm::vec3 get_vel() const { return vel_acc_.get(); }
+
+  void set_vel(const glm::vec3 &v)
+  {
+    vel_acc_.set(v);
+  }
+
   glm::vec3 P;
   glm::vec3 L;
   glm::vec3 angular_vel;
@@ -56,4 +70,7 @@ struct Box
   float elasticity;
   float inv_mass;
   glm::vec3 color;
+
+private:
+  Accessor<glm::vec3> vel_acc_;
 };

@@ -6,7 +6,7 @@
 #include <reactphysics3d/reactphysics3d.h>
 
 class Simulator;
-struct Box;
+class Box;
 
 class ImpulseCollisionSolver : public reactphysics3d::CollisionCallback
 {

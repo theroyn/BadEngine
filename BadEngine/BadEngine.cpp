@@ -104,10 +104,10 @@ void BadEngine::init_sphere_program()
 
 void BadEngine::init_boxes_program()
 {
-  box_count_ = sizeof(cube_coords_w_normals_n_textures) / sizeof(cube_coords_w_normals_n_textures[0]);
-
-  glGenVertexArrays(1, &box_vao_);
-  glBindVertexArray(box_vao_);
+  size_t box_count = sizeof(cube_coords_w_normals_n_textures) / sizeof(cube_coords_w_normals_n_textures[0]);
+  GLuint box_vao = 0;
+  glGenVertexArrays(1, &box_vao);
+  glBindVertexArray(box_vao);
 
   GLuint box_vbo;
 
@@ -126,14 +126,18 @@ void BadEngine::init_boxes_program()
   glEnableVertexAttribArray(1);
   glEnableVertexAttribArray(2);
 
-  box_shader_programme_ = Shader("base_vs.glsl", "base_fs.glsl");
+  Shader box_shader_program = Shader("base_vs.glsl", "base_fs.glsl");
 
-  if (box_shader_programme_.get_error())
+  if (box_shader_program.get_error())
   {
-    auto msgv = box_shader_programme_.get_message();
+    auto msgv = box_shader_program.get_message();
     msg_ = VMSG_TO_STR(msgv);
     status_ = false;
   }
+
+  RenderData render_data{ box_vao, box_count, box_shader_program, false, glm::vec3(1., .5, .71) };
+
+  render_data_.emplace(RenderableType::box, render_data);
 }
 
 void BadEngine::init_lines_program()
@@ -376,46 +380,6 @@ void BadEngine::draw_shape_program(const glm::mat4 &view_trans, const glm::mat4 
   }
 }
 
-void BadEngine::draw_boxes_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans)
-{
-  box_shader_programme_.use();
-  glBindVertexArray(box_vao_);
-
-  glm::vec3 cam_pos = cam_->get_pos();
-
-  box_shader_programme_.set_mat4("view", view_trans);
-  box_shader_programme_.set_mat4("projection", projection_trans);
-  box_shader_programme_.set_vec3("eye_pos", cam_pos);
-  for (Box *box : boxes_)
-  {
-    glm::mat4 model_trans(1.f);
-    model_trans = glm::translate(model_trans,
-                                 glm::vec3(box->center));
-
-    /**
-   // conversion code of quaternion to angle+axis:
-   float theta = 0.f;
-    glm::vec3 axis(0.f);
-    if (abs(box->orientation.w - 1.f) < .001f)
-    {
-      axis = glm::vec3(1.f, 0.f, 0.f);
-    }
-    else
-    {
-      theta = 2.f * acos(box->orientation.w);
-      float sine = 1.f / sin(0.5f * theta);
-      axis = glm::vec3(box->orientation.x * sine, box->orientation.y * sine, box->orientation.z * sine);
-    }
-    //model_trans = glm::rotate(model_trans, theta, axis)
-    */
-    model_trans *= glm::toMat4(box->orientation);
-    model_trans = glm::scale(model_trans, glm::vec3(box->dims));
-    box_shader_programme_.set_mat4("model", model_trans);
-    box_shader_programme_.set_vec3("object_color", box->color);
-    glDrawArrays(GL_TRIANGLES, 0, (GLsizei)box_count_);
-  }
-}
-
 void BadEngine::draw_lines_program(const glm::mat4 &view_trans, const glm::mat4 &projection_trans)
 {
   glLineWidth(3.f);
@@ -481,8 +445,6 @@ void BadEngine::draw()
   glm::mat4 projection_trans = cam_->get_projection();
 
   draw_shape_program(view_trans, projection_trans);
-
-  draw_boxes_program(view_trans, projection_trans);
 
   draw_cube_program(view_trans, projection_trans);
 
@@ -650,9 +612,17 @@ void BadEngine::set_sphere_velocity(int id, float x, float y, float z)
   spheres_[id]->set_vel(glm::vec3(x, y, z));
 }
 
-size_t BadEngine::add_box(const glm::vec3 &center, const glm::vec3 &dims)
+size_t BadEngine::add_box(const glm::vec3 &center, const glm::vec3 &dims, bool is_static, bool renderable)
 {
-  boxes_.push_back(new Box(center, dims));
+  size_t idx = add_state(center, glm::vec3{});
+  boxes_.push_back(new Box(get_pos_acc(idx), get_vel_acc(idx), center, dims, is_static));
+
+  if (renderable)
+  {
+    Renderable r = add_renderable(RenderableType::box);
+    boxes_[boxes_.size() - 1]->add_renderable(r);
+  }
+
   return boxes_.size() - 1;
 }
 

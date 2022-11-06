@@ -321,13 +321,13 @@ void Simulator::integrate_boxes(float h)
     }
 
     // internal forces calculations
-    glm::vec3 damping_force = -damping_ * box->vel;
+    glm::vec3 damping_force = -damping_ * box->get_vel();
     acc += damping_force * box->inv_mass;
 
     float angular_damping = 1.f / (1.f + damping_);
 
     // DUDU use semi-implicit euler
-    box->center += h * box->vel;
+    box->set_pos(box->get_pos() + h * box->get_vel());
 
     // linear momentum
 
@@ -336,7 +336,7 @@ void Simulator::integrate_boxes(float h)
       P_dot = acc / box->inv_mass;
 
     box->P += h * P_dot;
-    box->vel = box->P * box->inv_mass;
+    box->set_vel(box->P * box->inv_mass);
 
     glm::mat3 R = glm::toMat3(box->orientation);
     box->IInv = R * box->IBodyInv * glm::transpose(R);
@@ -348,6 +348,8 @@ void Simulator::integrate_boxes(float h)
 
     box->orientation += 0.5f * glm::quat(0.f, box->angular_vel) * box->orientation * h;
     box->orientation = glm::normalize(box->orientation);
+
+    box->update_model_if_renderable(box->orientation, glm::vec3(box->dims)); // DUDU identity orientation
   }
 
   // update reactphysics3d world
@@ -355,7 +357,7 @@ void Simulator::integrate_boxes(float h)
   {
     reactphysics3d::CollisionBody *body = body_pair.second;
     Box *box = reinterpret_cast<Box *>(body->getUserData());
-    reactphysics3d::Vector3 pos(box->center.x, box->center.y, box->center.z);
+    reactphysics3d::Vector3 pos(box->get_pos().x, box->get_pos().y, box->get_pos().z);
     reactphysics3d::Quaternion orientation(box->orientation.w, reactphysics3d::Vector3(box->orientation.x, box->orientation.y, box->orientation.z));
     reactphysics3d::Transform transform(pos, orientation);
 
@@ -398,7 +400,7 @@ void Simulator::init()
   elem_indices.clear();
   for (unsigned int i = 0; i < boxes_n_; ++i)
   {
-    elem_indices.push_back(engine_.add_box(glm::vec3(get_rand(-w, w), get_rand(-h, h), get_rand(-d, d)), glm::vec3(.4f, .4f, .4f)));
+    elem_indices.push_back(engine_.add_box(glm::vec3(get_rand(-w, w), get_rand(-h, h), get_rand(-d, d)), glm::vec3(.4f, .4f, .4f), false, true));
   }
 
   for (size_t ind : elem_indices)
@@ -410,12 +412,12 @@ void Simulator::init()
 
   // add boundaries
   const glm::vec3 center = engine_.get_world_center();
-  Box *floor = new Box(center + glm::vec3(0.f, -dims.y, 0.f), dims, true);
-  Box *ceiling = new Box(center + glm::vec3(0.f, dims.y, 0.f), dims, true);
-  Box *back = new Box(center + glm::vec3(0.f, 0.f, -dims.z), dims, true);
-  Box *front = new Box(center + glm::vec3(0.f, 0.f, dims.z), dims, true);
-  Box *right = new Box(center + glm::vec3(dims.x, 0.f, 0.f), dims, true);
-  Box *left = new Box(center + glm::vec3(-dims.x, 0.f, 0.f), dims, true);
+  Box *floor = engine_.get_box(engine_.add_box(center + glm::vec3(0.f, -dims.y, 0.f), dims, true, false));
+  Box *ceiling = engine_.get_box(engine_.add_box(center + glm::vec3(0.f, dims.y, 0.f), dims, true, false));
+  Box *back = engine_.get_box(engine_.add_box(center + glm::vec3(0.f, 0.f, -dims.z), dims, true, false));
+  Box *front = engine_.get_box(engine_.add_box(center + glm::vec3(0.f, 0.f, dims.z), dims, true, false));
+  Box *right = engine_.get_box(engine_.add_box(center + glm::vec3(dims.x, 0.f, 0.f), dims, true, false));
+  Box *left = engine_.get_box(engine_.add_box(center + glm::vec3(-dims.x, 0.f, 0.f), dims, true, false));
 
   boxes_.push_back(floor);
   boxes_.push_back(ceiling);
@@ -427,7 +429,7 @@ void Simulator::init()
   for (size_t i = 0; i < boxes_.size(); ++i)
   {
     Box *box = boxes_[i];
-    reactphysics3d::Vector3 pos(box->center.x, box->center.y, box->center.z);
+    reactphysics3d::Vector3 pos(box->get_pos().x, box->get_pos().y, box->get_pos().z);
     reactphysics3d::Quaternion orientation(box->orientation.w, reactphysics3d::Vector3(box->orientation.x, box->orientation.y, box->orientation.z));
     reactphysics3d::Transform transform(pos, orientation);
 

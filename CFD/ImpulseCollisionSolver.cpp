@@ -43,7 +43,7 @@ void ImpulseCollisionSolver::onContact(const CallbackData &callbackData)
 
 glm::vec3 get_local_p_vel(Box *box, const glm::vec3 &loc_p)
 {
-  return box->vel + glm::cross(box->angular_vel, loc_p - box->center);
+  return box->get_vel() + glm::cross(box->angular_vel, loc_p - box->get_pos());
 }
 
 bool ImpulseCollisionSolver::colliding(const ContactPointData &contact_point)
@@ -74,8 +74,8 @@ void ImpulseCollisionSolver::solve_single_collision(const ContactPointData &cont
   const glm::vec3 &n = contact_point.n;
   glm::vec3 p1dot = get_local_p_vel(contact_point.box1, contact_point.p);
   glm::vec3 p2dot = get_local_p_vel(contact_point.box2, contact_point.p);
-  glm::vec3 r1 = contact_point.p - contact_point.box1->center;
-  glm::vec3 r2 = contact_point.p - contact_point.box2->center;
+  glm::vec3 r1 = contact_point.p - contact_point.box1->get_pos();
+  glm::vec3 r2 = contact_point.p - contact_point.box2->get_pos();
   float vrel = glm::dot(n, p1dot - p2dot);
   float numerator = -(1.f + EPSILON) * vrel;
 
@@ -92,8 +92,8 @@ void ImpulseCollisionSolver::solve_single_collision(const ContactPointData &cont
   contact_point.box1->L += glm::cross(r1, j_force);
   contact_point.box2->L -= glm::cross(r2, j_force);
 
-  contact_point.box1->vel = contact_point.box1->P * contact_point.box1->inv_mass;
-  contact_point.box2->vel = contact_point.box2->P * contact_point.box2->inv_mass;
+  contact_point.box1->set_vel(contact_point.box1->P * contact_point.box1->inv_mass);
+  contact_point.box2->set_vel(contact_point.box2->P * contact_point.box2->inv_mass);
   contact_point.box1->angular_vel = contact_point.box1->IInv * contact_point.box1->L;
   contact_point.box2->angular_vel = contact_point.box2->IInv * contact_point.box2->L;
 }
