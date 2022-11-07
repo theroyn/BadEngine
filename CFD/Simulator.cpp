@@ -34,11 +34,6 @@ void Simulator::handle_collisions()
   col_solver_->handle_collisions(spheres_);
 
   // Box collisions
-  for (Box *box : boxes_)
-  {
-    box->color = glm::vec3(1., .2, .11);
-  }
-
   int solver_iteration_counter = 0;
 
   do
@@ -139,11 +134,11 @@ static void projectile(Arrow *arrow)
                    glm::vec3 axis = glm::normalize(glm::cross(unit, v));
 
                    float half_angle = 0.5f * theta;
-                   arrow->orientation.w = cos(half_angle);
-                   arrow->orientation.x = sin(half_angle) * 1.f;
-                   arrow->orientation.y = sin(half_angle) * 0.f;
-                   arrow->orientation.z = sin(half_angle) * 0.f;
-                   arrow->orientation = glm::normalize(arrow->orientation);
+
+                   arrow->set_orientation(glm::normalize((glm::quat(cos(half_angle),
+                                                                    sin(half_angle) * 1.f,
+                                                                    sin(half_angle) * 0.f,
+                                                                    sin(half_angle) * 0.f))));
                  });
 
   double t = glfwGetTime();
@@ -234,8 +229,8 @@ void Simulator::kinematics()
   projectile(arrow_proj);
   circle2(arrow_circle);
 
-  arrow_proj->update_model_if_renderable(arrow_proj->orientation, arrow_proj->dims);
-  arrow_circle->update_model_if_renderable(arrow_circle->orientation, arrow_circle->dims);
+  arrow_proj->update_model_if_renderable(arrow_proj->dims);
+  arrow_circle->update_model_if_renderable(arrow_circle->dims);
 }
 
 void Simulator::integrate()
@@ -300,7 +295,7 @@ void Simulator::integrate_spheres(float h)
 
     sphere->colliders_.clear();
 
-    sphere->update_model_if_renderable(glm::identity<glm::quat>(), glm::vec3(sphere->rad)); // DUDU identity orientation
+    sphere->update_model_if_renderable(glm::vec3(sphere->rad)); // DUDU identity orientation
   }
 }
 
@@ -338,7 +333,7 @@ void Simulator::integrate_boxes(float h)
     box->P += h * P_dot;
     box->set_vel(box->P * box->inv_mass);
 
-    glm::mat3 R = glm::toMat3(box->orientation);
+    glm::mat3 R = glm::toMat3(box->get_orientation());
     box->IInv = R * box->IBodyInv * glm::transpose(R);
 
     // angular_momentum
@@ -346,10 +341,10 @@ void Simulator::integrate_boxes(float h)
     box->L += L_dot * h * angular_damping;
     box->angular_vel = box->IInv * box->L;
 
-    box->orientation += 0.5f * glm::quat(0.f, box->angular_vel) * box->orientation * h;
-    box->orientation = glm::normalize(box->orientation);
+    glm::quat q = box->get_orientation();
+    box->set_orientation(glm::normalize((q + 0.5f * glm::quat(0.f, box->angular_vel) * q * h)));
 
-    box->update_model_if_renderable(box->orientation, glm::vec3(box->dims)); // DUDU identity orientation
+    box->update_model_if_renderable(glm::vec3(box->dims)); // DUDU identity orientation
   }
 
   // update reactphysics3d world
@@ -358,7 +353,8 @@ void Simulator::integrate_boxes(float h)
     reactphysics3d::CollisionBody *body = body_pair.second;
     Box *box = reinterpret_cast<Box *>(body->getUserData());
     reactphysics3d::Vector3 pos(box->get_pos().x, box->get_pos().y, box->get_pos().z);
-    reactphysics3d::Quaternion orientation(box->orientation.w, reactphysics3d::Vector3(box->orientation.x, box->orientation.y, box->orientation.z));
+    reactphysics3d::Quaternion orientation(box->get_orientation().w,
+                                           reactphysics3d::Vector3(box->get_orientation().x, box->get_orientation().y, box->get_orientation().z));
     reactphysics3d::Transform transform(pos, orientation);
 
     body->setTransform(transform);
@@ -430,7 +426,8 @@ void Simulator::init()
   {
     Box *box = boxes_[i];
     reactphysics3d::Vector3 pos(box->get_pos().x, box->get_pos().y, box->get_pos().z);
-    reactphysics3d::Quaternion orientation(box->orientation.w, reactphysics3d::Vector3(box->orientation.x, box->orientation.y, box->orientation.z));
+    reactphysics3d::Quaternion orientation(box->get_orientation().w,
+                                           reactphysics3d::Vector3(box->get_orientation().x, box->get_orientation().y, box->get_orientation().z));
     reactphysics3d::Transform transform(pos, orientation);
 
     reactphysics3d::CollisionBody *body = world_->createCollisionBody(transform);

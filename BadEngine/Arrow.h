@@ -18,11 +18,11 @@ public:
     set_pos(pos_start);
     static constexpr float ANGLE = 0.f;
     float half_angle = 0.5f * (utility::PI * 0.f);
-    orientation.w = cos(half_angle);
-    orientation.x = sin(half_angle) * 1.f;
-    orientation.y = sin(half_angle) * 0.f;
-    orientation.z = sin(half_angle) * 0.f;
-    orientation = glm::normalize(orientation);
+
+    set_orientation(glm::normalize((glm::quat(cos(half_angle),
+                                              sin(half_angle) * 1.f,
+                                              sin(half_angle) * 0.f,
+                                              sin(half_angle) * 0.f))));
   }
 
   void orient(const glm::vec3 &dir)
@@ -32,18 +32,14 @@ public:
     float theta = acos(glm::dot(unit, v));
     glm::vec3 axis = glm::normalize(glm::cross(unit, v));
 
-    if (abs(theta) < .0001f)
-    {
-      orientation = glm::quat(1.f, glm::vec3(0.f, 0.f, 0.f));
-    }
-    else
+    if (abs(theta) > .0001f)
     {
       float half_angle = 0.5f * theta;
-      orientation.w = cos(half_angle);
-      orientation.x = sin(half_angle) * axis.x;
-      orientation.y = sin(half_angle) * axis.y;
-      orientation.z = sin(half_angle) * axis.z;
-      orientation = glm::normalize(orientation);
+
+      set_orientation(glm::normalize((glm::quat(cos(half_angle),
+                                                sin(half_angle) * axis.x,
+                                                sin(half_angle) * axis.y,
+                                                sin(half_angle) * axis.z))));
     }
   }
 
@@ -51,5 +47,4 @@ public:
   glm::vec3 dims;
   glm::vec3 vel_start;
   float theta = 0.f;
-  glm::quat orientation;
 };

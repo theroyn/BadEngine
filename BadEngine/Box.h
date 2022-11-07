@@ -25,13 +25,13 @@ public:
   {
     set_pos(center);
     set_vel(glm::vec3(0.f));
-    static constexpr float ANGLE = 0.f;
+
     float half_angle = 0.5f * (utility::PI * 0.f);
-    orientation.w = cos(half_angle);
-    orientation.x = sin(half_angle) * 1.f;
-    orientation.y = sin(half_angle) * 0.f;
-    orientation.z = sin(half_angle) * 0.f;
-    orientation = glm::normalize(orientation);
+
+    set_orientation(glm::normalize((glm::quat(cos(half_angle),
+                                              sin(half_angle) * 1.f,
+                                              sin(half_angle) * 0.f,
+                                              sin(half_angle) * 0.f))));
 
     if (!is_static)
     {
@@ -57,7 +57,6 @@ public:
   glm::vec3 L;
   glm::vec3 angular_vel;
   glm::vec3 dims;
-  glm::quat orientation;
   glm::mat3 IBodyInv = glm::mat3(0.f), IInv = glm::mat3(1.f);
   float elasticity;
   float inv_mass;

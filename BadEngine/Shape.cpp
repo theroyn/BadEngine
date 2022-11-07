@@ -22,12 +22,22 @@ void Shape::set_vel(const glm::vec3 &v)
   state_acc_.get().v = v;
 }
 
+glm::quat Shape::get_orientation() const
+{
+  return state_acc_.get().orientation;
+}
+
+void Shape::set_orientation(const glm::quat &q)
+{
+  state_acc_.get().orientation = q;
+}
+
 void Shape::add_renderable(Renderable r)
 {
   r_ = r;
 }
 
-void Shape::update_model_if_renderable(const glm::quat &orientation, const glm::vec3 &dims)
+void Shape::update_model_if_renderable(const glm::vec3 &dims)
 {
   if (r_.has_value())
   {
@@ -35,7 +45,7 @@ void Shape::update_model_if_renderable(const glm::quat &orientation, const glm::
 
     model_trans = glm::translate(model_trans,
                                  get_pos());
-    model_trans *= glm::toMat4(orientation);
+    model_trans *= glm::toMat4(get_orientation());
     model_trans = glm::scale(model_trans, dims);
     r_.value().update_model_transformation(model_trans);
   }
