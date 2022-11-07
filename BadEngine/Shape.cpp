@@ -2,6 +2,8 @@
 
 #include "Shape.h"
 
+#include <stdexcept>
+
 glm::vec3 Shape::get_pos() const
 {
   return state_acc_.get().p;
@@ -22,6 +24,16 @@ void Shape::set_vel(const glm::vec3 &v)
   state_acc_.get().v = v;
 }
 
+glm::vec3 Shape::get_angular_vel() const
+{
+  return state_acc_.get().angular_vel;
+}
+
+void Shape::set_angular_vel(const glm::vec3 &w)
+{
+  state_acc_.get().angular_vel = w;
+}
+
 glm::quat Shape::get_orientation() const
 {
   return state_acc_.get().orientation;
@@ -35,6 +47,36 @@ void Shape::set_orientation(const glm::quat &q)
 void Shape::add_renderable(Renderable r)
 {
   r_ = r;
+}
+
+void Shape::add_collidable(float mass)
+{
+  c_ = create_collidable(mass);
+}
+
+bool Shape::has_collidable() const
+{
+  return c_.has_value();
+}
+
+Collidable &Shape::get_collidable()
+{
+  if (!has_collidable())
+  {
+    throw std::runtime_error("no collidable");
+  }
+
+  return c_.value();
+}
+
+Collidable Shape::get_collidable() const
+{
+  if (!has_collidable())
+  {
+    throw std::runtime_error("no collidable");
+  }
+
+  return c_.value();
 }
 
 void Shape::update_model_if_renderable(const glm::vec3 &dims)

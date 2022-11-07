@@ -6,7 +6,7 @@
 #include <reactphysics3d/reactphysics3d.h>
 
 class Simulator;
-class Box;
+class Shape;
 
 class ImpulseCollisionSolver : public reactphysics3d::CollisionCallback
 {
@@ -21,8 +21,8 @@ public:
 private:
   struct ContactPointData
   {
-    Box *box1;
-    Box *box2;
+    Shape *shape1;
+    Shape *shape2;
     float penetration_depth;
     glm::vec3 n;
     glm::vec3 p;

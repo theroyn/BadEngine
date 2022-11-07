@@ -308,16 +308,16 @@ void Simulator::integrate_boxes(float h)
 
     for (auto f : g_forces_)
     {
-      acc += f.second * box->inv_mass;
+      acc += f.second * box->get_collidable().inv_mass;
     }
     for (auto f : g_torques_)
     {
-      torque += f.second * box->inv_mass;
+      torque += f.second * box->get_collidable().inv_mass;
     }
 
     // internal forces calculations
     glm::vec3 damping_force = -damping_ * box->get_vel();
-    acc += damping_force * box->inv_mass;
+    acc += damping_force * box->get_collidable().inv_mass;
 
     float angular_damping = 1.f / (1.f + damping_);
 
@@ -327,22 +327,22 @@ void Simulator::integrate_boxes(float h)
     // linear momentum
 
     glm::vec3 P_dot(0.f);
-    if (box->inv_mass > .0001)
-      P_dot = acc / box->inv_mass;
+    if (box->get_collidable().inv_mass > .0001)
+      P_dot = acc / box->get_collidable().inv_mass;
 
-    box->P += h * P_dot;
-    box->set_vel(box->P * box->inv_mass);
+    box->get_collidable().P += h * P_dot;
+    box->set_vel(box->get_collidable().P * box->get_collidable().inv_mass);
 
     glm::mat3 R = glm::toMat3(box->get_orientation());
-    box->IInv = R * box->IBodyInv * glm::transpose(R);
+    box->get_collidable().IInv = R * box->get_collidable().IBodyInv * glm::transpose(R);
 
     // angular_momentum
     glm::vec3 L_dot = torque;
-    box->L += L_dot * h * angular_damping;
-    box->angular_vel = box->IInv * box->L;
+    box->get_collidable().L += L_dot * h * angular_damping;
+    box->set_angular_vel( box->get_collidable().IInv * box->get_collidable().L);
 
     glm::quat q = box->get_orientation();
-    box->set_orientation(glm::normalize((q + 0.5f * glm::quat(0.f, box->angular_vel) * q * h)));
+    box->set_orientation(glm::normalize((q + 0.5f * glm::quat(0.f, box->get_angular_vel()) * q * h)));
 
     box->update_model_if_renderable(glm::vec3(box->dims)); // DUDU identity orientation
   }
@@ -438,6 +438,22 @@ void Simulator::init()
     reactphysics3d::BoxShape *shape = physics_common_.createBoxShape(halfExtents);
     reactphysics3d::Collider *collider = body->addCollider(shape, reactphysics3d::Transform::identity());
   }
+
+ /** for (size_t i = 0; i < spheres_.size(); ++i)
+  {
+    Sphere *sphere = spheres_[i];
+    reactphysics3d::Vector3 pos(sphere->get_pos().x, sphere->get_pos().y, sphere->get_pos().z);
+    reactphysics3d::Quaternion orientation(sphere->get_orientation().w,
+                                           reactphysics3d::Vector3(sphere->get_orientation().x, sphere->get_orientation().y, sphere->get_orientation().z));
+    reactphysics3d::Transform transform(pos, orientation);
+
+    reactphysics3d::CollisionBody *body = world_->createCollisionBody(transform);
+    body->setUserData(sphere);
+    bodies_.emplace(i, body);
+    reactphysics3d::SphereShape *shape = physics_common_.createSphereShape(sphere->rad);
+
+    reactphysics3d::Collider *collider = body->addCollider(shape, reactphysics3d::Transform::identity());
+  }*/
 
   debug_line_ = engine_.get_line(engine_.add_line(glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f)));
 }
@@ -537,7 +553,7 @@ void Simulator::key_callback(int key, int scancode, int action, int mods)
     if (action == GLFW_PRESS)
     {
       std::cout << "R press!!!\n";
-      boxes_[0]->P.z += .3f;
+      boxes_[0]->get_collidable().P.z += .3f;
     }
   }
   break;
@@ -546,7 +562,7 @@ void Simulator::key_callback(int key, int scancode, int action, int mods)
     if (action == GLFW_PRESS)
     {
       std::cout << "R press!!!\n";
-      boxes_[0]->P.z -= .3f;
+      boxes_[0]->get_collidable().P.z -= .3f;
     }
   }
   break;

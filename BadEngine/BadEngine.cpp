@@ -603,8 +603,10 @@ void BadEngine::set_sphere_velocity(int id, float x, float y, float z)
 
 size_t BadEngine::add_box(const glm::vec3 &center, const glm::vec3 &dims, bool is_static, bool renderable)
 {
+  static constexpr float BOX_MASS = 7.f;
   size_t idx = add_state(center, glm::vec3{});
-  boxes_.push_back(new Box(get_state_acc(idx), center, dims, is_static));
+  boxes_.push_back(new Box(get_state_acc(idx), center, dims));
+  boxes_[boxes_.size() - 1]->add_collidable(is_static ? -1.f : BOX_MASS);
 
   if (renderable)
   {

@@ -43,6 +43,16 @@ public:
     }
   }
 
+private:
+  virtual Collidable create_collidable(float mass) const override
+  {
+    throw std::runtime_error("not implemented");
+    glm::mat3 IBody = glm::identity<glm::mat3>(); // DUDU implement
+
+    return Collidable(Collidable::Type::arrow, mass, IBody);
+  }
+
+public:
   glm::vec3 pos_start;
   glm::vec3 dims;
   glm::vec3 vel_start;

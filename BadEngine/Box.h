@@ -13,15 +13,9 @@ class Box : public Shape
 public:
   Box(Accessor<State> state_acc,
       const glm::vec3 &center,
-      const glm::vec3 &dims,
-      bool is_static) : Shape(state_acc),
-                        P(0.f),
-                        L(0.f),
-                        angular_vel(0.f, 0.f, 0.f),
-                        inv_mass(is_static ? 0.f : (1.f / 7.f)),
-                        dims(dims),
-                        elasticity(.9f),
-                        color(1., .5, .71)
+      const glm::vec3 &dims) : Shape(state_acc),
+                               dims(dims),
+                               color(1., .5, .71)
   {
     set_pos(center);
     set_vel(glm::vec3(0.f));
@@ -32,33 +26,27 @@ public:
                                               sin(half_angle) * 1.f,
                                               sin(half_angle) * 0.f,
                                               sin(half_angle) * 0.f))));
+  }
 
-    if (!is_static)
-    {
-      glm::mat3 IBody = glm::mat3(1.f) * ((1.f / inv_mass) / 12.f);
-      IBody[0][0] = dims.y * dims.y + dims.z * dims.z;
-      IBody[1][1] = dims.x * dims.x + dims.z * dims.z;
-      IBody[2][2] = dims.x * dims.x + dims.y * dims.y;
+  virtual Collidable create_collidable(float mass) const override
+  {
+    glm::mat3 IBody = glm::identity<glm::mat3>() * (mass / 12.f);
+    IBody[0][0] = dims.y * dims.y + dims.z * dims.z;
+    IBody[1][1] = dims.x * dims.x + dims.z * dims.z;
+    IBody[2][2] = dims.x * dims.x + dims.y * dims.y;
 
-      IBodyInv = glm::inverse(IBody);
-    }
+    return Collidable(Collidable::Type::box, mass, IBody);
   }
 
   void set_initial_vel(const glm::vec3 &v)
   {
     set_vel(v);
-    if (inv_mass > .001)
+    if (has_collidable() && get_collidable().inv_mass > .001)
     {
-      P = get_vel() / inv_mass;
+      get_collidable().P = get_vel() / get_collidable().inv_mass;
     }
   }
 
-  glm::vec3 P;
-  glm::vec3 L;
-  glm::vec3 angular_vel;
   glm::vec3 dims;
-  glm::mat3 IBodyInv = glm::mat3(0.f), IInv = glm::mat3(1.f);
-  float elasticity;
-  float inv_mass;
   glm::vec3 color;
 };

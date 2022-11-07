@@ -26,6 +26,15 @@ public:
     set_vel(glm::vec3(0.f));
   }
 
+private:
+  virtual Collidable create_collidable(float mass) const override
+  {
+    glm::mat3 IBody = glm::identity<glm::mat3>() * (2.f / 5.f) * (1.f / get_collidable().inv_mass) * rad * rad; // (2/5)*m*r^2
+
+    return Collidable(Collidable::Type::sphere, mass, IBody);
+  }
+
+public:
   float rad;
   float elasticity;
   float mass;
