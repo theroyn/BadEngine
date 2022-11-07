@@ -4,6 +4,7 @@
 #include "Renderable.h"
 #include "Accessor.h"
 #include "Shape.h"
+#include "State.h"
 
 #include <mutex>
 #include <optional>
@@ -16,22 +17,13 @@ public:
          float y,
          float z,
          float rad,
-         Accessor<glm::vec3> pos_acc,
-         Accessor<glm::vec3> vel_acc) : Shape(pos_acc),
-                                        mass(7.f),
-                                        rad(rad),
-                                        elasticity(.9f),
-                                        vel_acc_(vel_acc)
+         Accessor<State> state_acc) : Shape(state_acc),
+                                      mass(7.f),
+                                      rad(rad),
+                                      elasticity(.9f)
   {
     set_pos(glm::vec3(x, y, z));
     set_vel(glm::vec3(0.f));
-  }
-
-  glm::vec3 get_vel() const { return vel_acc_.get(); }
-
-  void set_vel(const glm::vec3 &v)
-  {
-    vel_acc_.set(v);
   }
 
   float rad;
@@ -39,7 +31,4 @@ public:
   float mass;
   std::mutex in_collision_m_;
   std::unordered_set<Sphere *> colliders_;
-
-private:
-  Accessor<glm::vec3> vel_acc_;
 };

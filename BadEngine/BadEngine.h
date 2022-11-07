@@ -10,6 +10,7 @@
 #include "Box.h"
 #include "Arrow.h"
 #include "Line.h"
+#include "State.h"
 #include <functional>
 
 
@@ -84,10 +85,8 @@ private:
   void init_arrows_program();
   glm::mat4 &get_model(RenderableType type, size_t idx);
   Renderable add_renderable(RenderableType type);
-  glm::vec3 &get_state_pos(size_t idx);
-  glm::vec3 &get_state_vel(size_t idx);
-  Accessor<glm::vec3> get_pos_acc(size_t idx);
-  Accessor<glm::vec3> get_vel_acc(size_t idx);
+  State &get_state(size_t idx);
+  Accessor<State> get_state_acc(size_t idx);
 
 private:
   static void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
@@ -104,13 +103,6 @@ private:
   // (RenderableType --> vector of model transformations)
   std::unordered_map<RenderableType, std::vector<glm::mat4>> models_by_vao_;
 
-  struct State
-  {
-    State(const glm::vec3 &p, const glm::vec3 &v) : p(p), v(v) {}
-
-    glm::vec3 p;
-    glm::vec3 v;
-  };
 
   std::vector<State> states_;
   size_t add_state(const glm::vec3 &pos, const glm::vec3 &vel);

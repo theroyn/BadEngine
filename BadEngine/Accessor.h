@@ -13,6 +13,10 @@ public:
   {
     return get_func_();
   }
+  T& get()
+  {
+    return get_func_();
+  }
   void set(const T &v)
   {
     get_func_() = v;

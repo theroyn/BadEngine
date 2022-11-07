@@ -4,12 +4,22 @@
 
 glm::vec3 Shape::get_pos() const
 {
-  return pos_acc_.get();
+  return state_acc_.get().p;
 }
 
 void Shape::set_pos(const glm::vec3 &pos)
 {
-  pos_acc_.set(pos);
+  state_acc_.get().p = pos;
+}
+
+glm::vec3 Shape::get_vel() const
+{
+  return state_acc_.get().v;
+}
+
+void Shape::set_vel(const glm::vec3 &v)
+{
+  state_acc_.get().v = v;
 }
 
 void Shape::add_renderable(Renderable r)

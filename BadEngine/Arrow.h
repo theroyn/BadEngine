@@ -1,20 +1,18 @@
 #pragma once
 
 #include "gl_incs.h"
-
 #include "utils.h"
+#include "State.h"
 
 class Arrow : public Shape
 {
 public:
-  Arrow(Accessor<glm::vec3> pos_acc,
-        Accessor<glm::vec3> vel_acc,
+  Arrow(Accessor<State> state_acc,
         const glm::vec3 &pos,
-        const glm::vec3 &dims) : Shape(pos_acc),
+        const glm::vec3 &dims) : Shape(state_acc),
                                  pos_start(pos),
                                  dims(dims),
-                                 vel_start(0.f),
-                                 vel_acc_(vel_acc)
+                                 vel_start(0.f)
   {
     set_vel(vel_start);
     set_pos(pos_start);
@@ -25,13 +23,6 @@ public:
     orientation.y = sin(half_angle) * 0.f;
     orientation.z = sin(half_angle) * 0.f;
     orientation = glm::normalize(orientation);
-  }
-
-  glm::vec3 get_vel() const { return vel_acc_.get(); }
-
-  void set_vel(const glm::vec3 &v)
-  {
-    vel_acc_.set(v);
   }
 
   void orient(const glm::vec3 &dir)
@@ -61,5 +52,4 @@ public:
   glm::vec3 vel_start;
   float theta = 0.f;
   glm::quat orientation;
-  Accessor<glm::vec3> vel_acc_;
 };

@@ -555,26 +555,15 @@ size_t BadEngine::add_state(const glm::vec3 &pos, const glm::vec3 &vel)
   return states_.size() - 1;
 }
 
-Accessor<glm::vec3> BadEngine::get_vel_acc(size_t idx)
+Accessor<State> BadEngine::get_state_acc(size_t idx)
 {
-  std::function<glm::vec3 &()> get_func(std::bind(&BadEngine::get_state_vel, this, idx));
-  return Accessor<glm::vec3>(get_func);
+  std::function<State &()> get_func(std::bind(&BadEngine::get_state, this, idx));
+  return Accessor<State>(get_func);
 }
 
-Accessor<glm::vec3> BadEngine::get_pos_acc(size_t idx)
+State &BadEngine::get_state(size_t idx)
 {
-  std::function<glm::vec3 &()> get_func(std::bind(&BadEngine::get_state_pos, this, idx));
-  return Accessor<glm::vec3>(get_func);
-}
-
-glm::vec3 &BadEngine::get_state_pos(size_t idx)
-{
-  return states_.at(idx).p;
-}
-
-glm::vec3 &BadEngine::get_state_vel(size_t idx)
-{
-  return states_.at(idx).v;
+  return states_.at(idx);
 }
 
 size_t BadEngine::add_sphere(float x, float y, float z, bool renderable)
@@ -582,7 +571,7 @@ size_t BadEngine::add_sphere(float x, float y, float z, bool renderable)
   size_t idx = add_state(glm::vec3(x, y, z), glm::vec3{});
 
 
-  spheres_.push_back(new Sphere(x, y, z, sphere_rad_, get_pos_acc(idx), get_vel_acc(idx)));
+  spheres_.push_back(new Sphere(x, y, z, sphere_rad_, get_state_acc(idx)));
   if (renderable)
   {
     Renderable r = add_renderable(RenderableType::sphere);
@@ -615,7 +604,7 @@ void BadEngine::set_sphere_velocity(int id, float x, float y, float z)
 size_t BadEngine::add_box(const glm::vec3 &center, const glm::vec3 &dims, bool is_static, bool renderable)
 {
   size_t idx = add_state(center, glm::vec3{});
-  boxes_.push_back(new Box(get_pos_acc(idx), get_vel_acc(idx), center, dims, is_static));
+  boxes_.push_back(new Box(get_state_acc(idx), center, dims, is_static));
 
   if (renderable)
   {
@@ -640,7 +629,7 @@ Line *BadEngine::get_line(size_t id) const
 size_t BadEngine::add_arrow(const glm::vec3 &pos, const glm::vec3 &dims, bool renderable)
 {
   size_t idx = add_state(pos, glm::vec3{});
-  arrows_.push_back(new Arrow(get_pos_acc(idx), get_vel_acc(idx), pos, dims));
+  arrows_.push_back(new Arrow(get_state_acc(idx), pos, dims));
 
   if (renderable)
   {
