@@ -31,7 +31,7 @@ public:
 private:
   void integrate();
   void integrate_spheres(float h);
-  void integrate_boxes(float h);
+  void integrate_shapes(float h);
   void handle_collisions();
   void handle_sphere_collisions_naive_alg();
   void kinematics();
@@ -56,6 +56,6 @@ private:
   reactphysics3d::PhysicsCommon physics_common_;
   reactphysics3d::PhysicsWorld *world_ = nullptr;
   ImpulseCollisionSolver impulse_solver_;
-  std::unordered_map<size_t, reactphysics3d::CollisionBody *> bodies_;
+  std::vector<reactphysics3d::CollisionBody *> bodies_;
   Line *debug_line_ = nullptr;
 };

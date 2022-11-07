@@ -1,6 +1,6 @@
 
 #include "ImpulseCollisionSolver.h"
-#include "Box.h"
+#include "Shape.h"
 
 static inline constexpr float THRESHOLD = .01f;
 static inline constexpr float EPSILON = .5f;
@@ -23,6 +23,7 @@ void ImpulseCollisionSolver::onContact(const CallbackData &callbackData)
     auto contact_pair = callbackData.getContactPair(i);
     Shape *shape1 = reinterpret_cast<Shape *>(contact_pair.getBody1()->getUserData());
     Shape *shape2 = reinterpret_cast<Shape *>(contact_pair.getBody2()->getUserData());
+
     for (uint32_t i = 0; i < contact_pair.getNbContactPoints(); ++i)
     {
       ContactPoint contact_point = contact_pair.getContactPoint(i);
@@ -41,9 +42,9 @@ void ImpulseCollisionSolver::onContact(const CallbackData &callbackData)
   }
 }
 
-glm::vec3 get_local_p_vel(Shape *box, const glm::vec3 &loc_p)
+glm::vec3 get_local_p_vel(Shape *s, const glm::vec3 &loc_p)
 {
-  return box->get_vel() + glm::cross(box->get_angular_vel(), loc_p - box->get_pos());
+  return s->get_vel() + glm::cross(s->get_angular_vel(), loc_p - s->get_pos());
 }
 
 bool ImpulseCollisionSolver::colliding(const ContactPointData &contact_point)
@@ -96,8 +97,8 @@ void ImpulseCollisionSolver::solve_single_collision(const ContactPointData &cont
 
   contact_point.shape1->set_vel(c1.P * c1.inv_mass);
   contact_point.shape2->set_vel(c2.P * c2.inv_mass);
-  contact_point.shape1->set_angular_vel( c1.IInv * c1.L);
-  contact_point.shape2->set_angular_vel( c2.IInv * c2.L);
+  contact_point.shape1->set_angular_vel(c1.IInv * c1.L);
+  contact_point.shape2->set_angular_vel(c2.IInv * c2.L);
 }
 
 void ImpulseCollisionSolver::solve()

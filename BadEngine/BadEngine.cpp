@@ -533,8 +533,8 @@ void BadEngine::process_input()
 
 void BadEngine::demo_add_spheres()
 {
-  add_sphere(1.f, 2.f, -.8f, false);
-  add_sphere(-1.f, 2.f, -.8f, false);
+  add_sphere(1.f, 2.f, -.8f, false, false);
+  add_sphere(-1.f, 2.f, -.8f, false, false);
 }
 
 glm::mat4 &BadEngine::get_model(RenderableType type, size_t idx)
@@ -566,16 +566,21 @@ State &BadEngine::get_state(size_t idx)
   return states_.at(idx);
 }
 
-size_t BadEngine::add_sphere(float x, float y, float z, bool renderable)
+size_t BadEngine::add_sphere(float x, float y, float z, bool is_static, bool renderable)
 {
+  static constexpr float SPHERE_MASS = 7.f;
   size_t idx = add_state(glm::vec3(x, y, z), glm::vec3{});
 
+  Sphere *sphere = new Sphere(x, y, z, sphere_rad_, get_state_acc(idx));
 
-  spheres_.push_back(new Sphere(x, y, z, sphere_rad_, get_state_acc(idx)));
+  spheres_.push_back(sphere);
+
+  sphere->add_collidable(is_static ? -1.f : SPHERE_MASS);
+
   if (renderable)
   {
     Renderable r = add_renderable(RenderableType::sphere);
-    spheres_[spheres_.size() - 1]->add_renderable(r);
+    sphere->add_renderable(r);
   }
 
   return spheres_.size() - 1;
@@ -605,13 +610,14 @@ size_t BadEngine::add_box(const glm::vec3 &center, const glm::vec3 &dims, bool i
 {
   static constexpr float BOX_MASS = 7.f;
   size_t idx = add_state(center, glm::vec3{});
-  boxes_.push_back(new Box(get_state_acc(idx), center, dims));
-  boxes_[boxes_.size() - 1]->add_collidable(is_static ? -1.f : BOX_MASS);
+  Box *box = new Box(get_state_acc(idx), center, dims);
+  boxes_.push_back(box);
+  box->add_collidable(is_static ? -1.f : BOX_MASS);
 
   if (renderable)
   {
     Renderable r = add_renderable(RenderableType::box);
-    boxes_[boxes_.size() - 1]->add_renderable(r);
+    box->add_renderable(r);
   }
 
   return boxes_.size() - 1;

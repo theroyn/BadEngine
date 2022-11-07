@@ -17,7 +17,8 @@ public:
          float y,
          float z,
          float rad,
-         Accessor<State> state_acc) : Shape(state_acc),
+         Accessor<State> state_acc) : Shape(state_acc,
+                                            glm::vec3(rad)),
                                       mass(7.f),
                                       rad(rad),
                                       elasticity(.9f)
@@ -29,7 +30,7 @@ public:
 private:
   virtual Collidable create_collidable(float mass) const override
   {
-    glm::mat3 IBody = glm::identity<glm::mat3>() * (2.f / 5.f) * (1.f / get_collidable().inv_mass) * rad * rad; // (2/5)*m*r^2
+    glm::mat3 IBody = glm::identity<glm::mat3>() * (2.f / 5.f) * mass * rad * rad; // (2/5)*m*r^2
 
     return Collidable(Collidable::Type::sphere, mass, IBody);
   }

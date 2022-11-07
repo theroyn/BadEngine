@@ -9,9 +9,8 @@ class Arrow : public Shape
 public:
   Arrow(Accessor<State> state_acc,
         const glm::vec3 &pos,
-        const glm::vec3 &dims) : Shape(state_acc),
+        const glm::vec3 &dims) : Shape(state_acc, dims),
                                  pos_start(pos),
-                                 dims(dims),
                                  vel_start(0.f)
   {
     set_vel(vel_start);
@@ -54,7 +53,6 @@ private:
 
 public:
   glm::vec3 pos_start;
-  glm::vec3 dims;
   glm::vec3 vel_start;
   float theta = 0.f;
 };

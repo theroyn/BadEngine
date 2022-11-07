@@ -60,7 +60,7 @@ public:
   float get_sphere_radius(float rad) const { return sphere_rad_; }
   void set_sphere_pos(int id, float x, float y, float z);
   void set_sphere_velocity(int id, float x, float y, float z);
-  size_t add_sphere(float x, float y, float z, bool renderable);
+  size_t add_sphere(float x, float y, float z, bool is_static, bool renderable);
   void set_world_dims(glm::vec3 dims);
   glm::vec3 get_world_center() const { return cube_.pos; }
   glm::vec3 get_world_dims() const { return cube_scale_; }
@@ -110,6 +110,7 @@ private:
   std::vector<Sphere *> spheres_;
   float sphere_rad_;
 
+  std::vector<Shape *> shapes_;
   std::vector<Box *> boxes_;
   std::vector<Line *> lines_;
   Shader line_shader_programme_;

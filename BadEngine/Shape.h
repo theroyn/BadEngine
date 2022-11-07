@@ -10,7 +10,9 @@
 class Shape
 {
 public:
-  Shape(Accessor<State> state_acc) : state_acc_(state_acc) {}
+  Shape(Accessor<State> state_acc,
+        glm::vec3 dims) : state_acc_(state_acc),
+                          dims_(dims) {}
 
 public:
   glm::vec3 get_pos() const;
@@ -21,6 +23,16 @@ public:
   virtual void set_vel(const glm::vec3 &v);
   glm::vec3 get_angular_vel() const;
   virtual void set_angular_vel(const glm::vec3 &w);
+  glm::vec3 get_dims() const;
+
+  void set_initial_vel(const glm::vec3 &v)
+  {
+    set_vel(v);
+    if (has_collidable() && get_collidable().inv_mass > .001)
+    {
+      get_collidable().P = get_vel() / get_collidable().inv_mass;
+    }
+  }
 
 public:
   void add_renderable(Renderable r);
@@ -37,4 +49,5 @@ private:
   std::optional<Renderable> r_;
   std::optional<Collidable> c_;
   Accessor<State> state_acc_;
+  glm::vec3 dims_;
 };

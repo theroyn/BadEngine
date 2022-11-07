@@ -13,8 +13,7 @@ class Box : public Shape
 public:
   Box(Accessor<State> state_acc,
       const glm::vec3 &center,
-      const glm::vec3 &dims) : Shape(state_acc),
-                               dims(dims),
+      const glm::vec3 &dims) : Shape(state_acc, dims),
                                color(1., .5, .71)
   {
     set_pos(center);
@@ -31,6 +30,7 @@ public:
   virtual Collidable create_collidable(float mass) const override
   {
     glm::mat3 IBody = glm::identity<glm::mat3>() * (mass / 12.f);
+    const glm::vec3 &dims = get_dims();
     IBody[0][0] = dims.y * dims.y + dims.z * dims.z;
     IBody[1][1] = dims.x * dims.x + dims.z * dims.z;
     IBody[2][2] = dims.x * dims.x + dims.y * dims.y;
@@ -38,15 +38,5 @@ public:
     return Collidable(Collidable::Type::box, mass, IBody);
   }
 
-  void set_initial_vel(const glm::vec3 &v)
-  {
-    set_vel(v);
-    if (has_collidable() && get_collidable().inv_mass > .001)
-    {
-      get_collidable().P = get_vel() / get_collidable().inv_mass;
-    }
-  }
-
-  glm::vec3 dims;
   glm::vec3 color;
 };

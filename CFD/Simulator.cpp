@@ -13,7 +13,7 @@ Simulator::Simulator(unsigned int spheres_n,
                                              base_h_(.03f),
                                              damping_(.09f),
                                              spheres_n_(spheres_n),
-                                             boxes_n_(spheres_n),
+                                             boxes_n_(boxes_n),
                                              sphere_rad_(.1f),
                                              engine_(std::bind(&Simulator::key_callback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4)),
                                              impulse_solver_(this)
@@ -31,9 +31,9 @@ Simulator::Simulator(unsigned int spheres_n,
 void Simulator::handle_collisions()
 {
   // Sphere collisions
-  col_solver_->handle_collisions(spheres_);
+  //col_solver_->handle_collisions(spheres_);
 
-  // Box collisions
+  // Shape collisions
   int solver_iteration_counter = 0;
 
   do
@@ -62,9 +62,8 @@ void Simulator::handle_collisions()
 
 Simulator::~Simulator()
 {
-  for (auto &body_pair : bodies_)
+  for (reactphysics3d::CollisionBody *body : bodies_)
   {
-    reactphysics3d::CollisionBody *body = body_pair.second;
     world_->destroyCollisionBody(body);
   }
   physics_common_.destroyPhysicsWorld(world_);
@@ -229,8 +228,8 @@ void Simulator::kinematics()
   projectile(arrow_proj);
   circle2(arrow_circle);
 
-  arrow_proj->update_model_if_renderable(arrow_proj->dims);
-  arrow_circle->update_model_if_renderable(arrow_circle->dims);
+  arrow_proj->update_model_if_renderable(arrow_proj->get_dims());
+  arrow_circle->update_model_if_renderable(arrow_circle->get_dims());
 }
 
 void Simulator::integrate()
@@ -249,8 +248,8 @@ void Simulator::integrate()
   last_time_ = curr_time;
 
   float h = base_h_ * 133.33f * delta;
-  integrate_spheres(h);
-  integrate_boxes(h);
+  //integrate_spheres(h);
+  integrate_shapes(h);
 }
 
 static float get_rand(float low = -.5f, float high = .5f)
@@ -299,62 +298,65 @@ void Simulator::integrate_spheres(float h)
   }
 }
 
-void Simulator::integrate_boxes(float h)
+void Simulator::integrate_shapes(float h)
 {
-  for (auto box : boxes_)
+  // DUDU refactor this ugliness
+  std::vector<Shape *> shapes;
+  std::copy(boxes_.begin(), boxes_.end(), std::back_inserter(shapes));
+  std::copy(spheres_.begin(), spheres_.end(), std::back_inserter(shapes));
+  for (auto shape : shapes)
   {
     glm::vec3 acc(0.f);
     glm::vec3 torque(0.f);
 
     for (auto f : g_forces_)
     {
-      acc += f.second * box->get_collidable().inv_mass;
+      acc += f.second * shape->get_collidable().inv_mass;
     }
     for (auto f : g_torques_)
     {
-      torque += f.second * box->get_collidable().inv_mass;
+      torque += f.second * shape->get_collidable().inv_mass;
     }
 
     // internal forces calculations
-    glm::vec3 damping_force = -damping_ * box->get_vel();
-    acc += damping_force * box->get_collidable().inv_mass;
+    glm::vec3 damping_force = -damping_ * shape->get_vel();
+    acc += damping_force * shape->get_collidable().inv_mass;
 
     float angular_damping = 1.f / (1.f + damping_);
 
     // DUDU use semi-implicit euler
-    box->set_pos(box->get_pos() + h * box->get_vel());
+    shape->set_pos(shape->get_pos() + h * shape->get_vel());
 
     // linear momentum
 
     glm::vec3 P_dot(0.f);
-    if (box->get_collidable().inv_mass > .0001)
-      P_dot = acc / box->get_collidable().inv_mass;
+    if (shape->get_collidable().inv_mass > .0001)
+      P_dot = acc / shape->get_collidable().inv_mass;
 
-    box->get_collidable().P += h * P_dot;
-    box->set_vel(box->get_collidable().P * box->get_collidable().inv_mass);
+    shape->get_collidable().P += h * P_dot;
+    shape->set_vel(shape->get_collidable().P * shape->get_collidable().inv_mass);
 
-    glm::mat3 R = glm::toMat3(box->get_orientation());
-    box->get_collidable().IInv = R * box->get_collidable().IBodyInv * glm::transpose(R);
+    glm::mat3 R = glm::toMat3(shape->get_orientation());
+    shape->get_collidable().IInv = R * shape->get_collidable().IBodyInv * glm::transpose(R);
 
     // angular_momentum
     glm::vec3 L_dot = torque;
-    box->get_collidable().L += L_dot * h * angular_damping;
-    box->set_angular_vel( box->get_collidable().IInv * box->get_collidable().L);
+    shape->get_collidable().L += L_dot * h * angular_damping;
+    shape->set_angular_vel(shape->get_collidable().IInv * shape->get_collidable().L);
 
-    glm::quat q = box->get_orientation();
-    box->set_orientation(glm::normalize((q + 0.5f * glm::quat(0.f, box->get_angular_vel()) * q * h)));
+    glm::quat q = shape->get_orientation();
+    shape->set_orientation(glm::normalize((q + 0.5f * glm::quat(0.f, shape->get_angular_vel()) * q * h)));
 
-    box->update_model_if_renderable(glm::vec3(box->dims)); // DUDU identity orientation
+    shape->update_model_if_renderable(glm::vec3(shape->get_dims())); // DUDU identity orientation
   }
 
   // update reactphysics3d world
-  for (auto &body_pair : bodies_)
+  for (reactphysics3d::CollisionBody *body : bodies_)
   {
-    reactphysics3d::CollisionBody *body = body_pair.second;
-    Box *box = reinterpret_cast<Box *>(body->getUserData());
-    reactphysics3d::Vector3 pos(box->get_pos().x, box->get_pos().y, box->get_pos().z);
-    reactphysics3d::Quaternion orientation(box->get_orientation().w,
-                                           reactphysics3d::Vector3(box->get_orientation().x, box->get_orientation().y, box->get_orientation().z));
+    Shape *shape = reinterpret_cast<Shape *>(body->getUserData());
+    reactphysics3d::Vector3 pos(shape->get_pos().x, shape->get_pos().y, shape->get_pos().z);
+    reactphysics3d::Quaternion orientation(shape->get_orientation().w,
+                                           reactphysics3d::Vector3(shape->get_orientation().x, shape->get_orientation().y, shape->get_orientation().z));
     reactphysics3d::Transform transform(pos, orientation);
 
     body->setTransform(transform);
@@ -380,15 +382,15 @@ void Simulator::init()
   for (unsigned int i = 0; i < spheres_n_; ++i)
   {
     if (small_start)
-      elem_indices.push_back(engine_.add_sphere(get_rand(), get_rand(), get_rand(), true));
+      elem_indices.push_back(engine_.add_sphere(get_rand(), get_rand(), get_rand(), false, true));
     else
-      elem_indices.push_back(engine_.add_sphere(get_rand(-w, w), get_rand(-h, h), get_rand(-d, d), true));
+      elem_indices.push_back(engine_.add_sphere(get_rand(-w, w), get_rand(-h, h), get_rand(-d, d), false, true));
   }
 
   for (size_t ind : elem_indices)
   {
     Sphere *s = engine_.get_sphere(ind);
-    s->set_vel(glm::vec3(get_rand(-.2f, .2f), get_rand(-.2f, .2f), get_rand(-.2f, .2f)));
+    s->set_initial_vel(glm::vec3(get_rand(-.2f, .2f), get_rand(-.2f, .2f), get_rand(-.2f, .2f)));
     spheres_.push_back(s);
   }
 
@@ -432,14 +434,14 @@ void Simulator::init()
 
     reactphysics3d::CollisionBody *body = world_->createCollisionBody(transform);
     body->setUserData(box);
-    bodies_.emplace(i, body);
-    const reactphysics3d::Vector3 halfExtents(box->dims.x * .5f, box->dims.y * .5f, box->dims.z * .5f);
+    bodies_.push_back(body);
+    const reactphysics3d::Vector3 halfExtents(box->get_dims().x * .5f, box->get_dims().y * .5f, box->get_dims().z * .5f);
 
     reactphysics3d::BoxShape *shape = physics_common_.createBoxShape(halfExtents);
     reactphysics3d::Collider *collider = body->addCollider(shape, reactphysics3d::Transform::identity());
   }
 
- /** for (size_t i = 0; i < spheres_.size(); ++i)
+  for (size_t i = 0; i < spheres_.size(); ++i)
   {
     Sphere *sphere = spheres_[i];
     reactphysics3d::Vector3 pos(sphere->get_pos().x, sphere->get_pos().y, sphere->get_pos().z);
@@ -449,11 +451,11 @@ void Simulator::init()
 
     reactphysics3d::CollisionBody *body = world_->createCollisionBody(transform);
     body->setUserData(sphere);
-    bodies_.emplace(i, body);
+    bodies_.push_back(body);
     reactphysics3d::SphereShape *shape = physics_common_.createSphereShape(sphere->rad);
 
     reactphysics3d::Collider *collider = body->addCollider(shape, reactphysics3d::Transform::identity());
-  }*/
+  }
 
   debug_line_ = engine_.get_line(engine_.add_line(glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 0.f, 0.f)));
 }

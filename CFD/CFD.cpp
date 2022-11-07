@@ -4,6 +4,8 @@
 
 int main(int argc, char *argv[])
 {
+  int status = 0;
+
   try
   {
     unsigned int spheres_n = 9;
@@ -25,5 +27,8 @@ int main(int argc, char *argv[])
   catch (const std::exception &error)
   {
     std::cerr << error.what();
+    status = 1;
   }
+
+  return status;
 }

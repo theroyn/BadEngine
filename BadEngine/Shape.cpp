@@ -44,6 +44,11 @@ void Shape::set_orientation(const glm::quat &q)
   state_acc_.get().orientation = q;
 }
 
+glm::vec3 Shape::get_dims() const
+{
+  return dims_;
+}
+
 void Shape::add_renderable(Renderable r)
 {
   r_ = r;
